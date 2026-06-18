@@ -32,5 +32,8 @@ In project
 For the code I needed for the collision model and AABB calculation. 
 https://github.com/SpaghettiCodeMasterThe/Godot-Quadtree-Terrain
 
+For the function SampleMiddleOfPixel() in the shader ... and for the great video about simple terrain
+https://github.com/majikayogames/SimpleTerrain
+
 ## License
 MIT. I hope this helps somebody in their Godot journey!
