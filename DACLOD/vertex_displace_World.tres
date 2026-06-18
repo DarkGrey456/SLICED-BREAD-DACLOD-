@@ -1,0 +1,23 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://cs4hqr707kbit"]
+
+[ext_resource type="Shader" uid="uid://ceex5yhnq2bto" path="res://vertex_displace_world.gdshader" id="1_g770v"]
+[ext_resource type="Texture2D" uid="uid://b7x6x3eyrlvnc" path="res://assets/Heightmaps/ISLAND_4k_2/height_preview.png" id="2_y6rw4"]
+[ext_resource type="Texture2D" uid="uid://dnwbmg41kby1i" path="res://assets/Heightmaps/ISLAND_4k_2/height2.exr" id="3_g770v"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_g770v")
+shader_parameter/albedo = Color(1, 1, 1, 1)
+shader_parameter/texture_albedo = ExtResource("2_y6rw4")
+shader_parameter/texture_height = ExtResource("3_g770v")
+shader_parameter/albedo_texture_size = Vector2i(4096, 4096)
+shader_parameter/point_size = 0.10000000149012
+shader_parameter/roughness = 1.0
+shader_parameter/metallic_texture_channel = Vector4(1, 0, 0, 0)
+shader_parameter/specular = 0.5
+shader_parameter/metallic = 0.0
+shader_parameter/node_pos = Vector2(3968, 3968)
+shader_parameter/uv1_scale = Vector3(1, 1, 1)
+shader_parameter/uv1_offset = Vector3(0, 0, 0)
+shader_parameter/uv2_scale = Vector3(1, 1, 1)
+shader_parameter/uv2_offset = Vector3(0, 0, 0)
