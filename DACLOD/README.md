@@ -28,6 +28,7 @@ In project
 * occluders don't seem to help
 
 ## Credits
+For the code I needed for the collision model and AABB calculation. 
 https://github.com/SpaghettiCodeMasterThe/Godot-Quadtree-Terrain
 
 ## License
