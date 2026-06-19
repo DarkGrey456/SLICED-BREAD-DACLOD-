@@ -7,42 +7,38 @@ extends Node3D
 
 
 #@onready var collision_shape_3d: CollisionShape3D = $"../StaticBody3D/CollisionShape3D"
+var hmap:Image 
 
 var resolution:int = 128
 var occluders = []
 var min_h = 100000
 var max_h = -2000	
 
-func create_collision_shapes()->void:
-	if not Engine.is_editor_hint() and first_time:
-		first_time = false
-		load_image()
-		var grid_size = 4096 / resolution
-		for i in range(grid_size):
-			for j in range(grid_size):
-				var rect:Rect2
-				rect.position = Vector2(float(i)*128.0,float(j)*128.0)
-				rect.size = Vector2(resolution, resolution)
-				grid[i][j].storage[0].aabb = thread_generate_mesh(rect)	
+var scale_xz = 1.0
+var HEIGHT_SCALE:float = 500.0
 
-@export_tool_button("make collider")
-var make_collider = create_collision_shapes
+#var height_data = PackedFloat32Array()
 
-var grid_size = 32
-var cell_size = 128
-var xmax = 4096
-
-var grid = []
+@export_tool_button("DONT CLICK THIS BUTTON")
+var make_collider = create_collision
 
 
-
-enum CAM_PLANE{ NEAR_PLANE, FAR_PLANE, LEFT_PLANE, TOP_PLANE, RIGHT_PLANE, BOTTOM_PLANE}
-var cam_planes
 
 var x: float = 0
 var z: float = 0
 
 
+
+#=======================================================================================
+# Grid related ... data helper mostly, can also be utilized for data loading
+#=======================================================================================
+
+# this variable name was redefined previously
+var grid_size = 32
+var cell_size = 128
+var xmax = 4096
+
+var grid = []
 
 class Elem:
 	var id: int
@@ -55,10 +51,6 @@ class Elem:
 class grid_elem:
 	var storage = []
 	
-	
-
-
-
 var grid_pattern = [[Vector2i(-1,-1),Vector2i(-1,0),Vector2i(-1,1)],\
 					[Vector2i(0,-1),Vector2i(0,0),Vector2i(0,1)],\
 					[Vector2i(1,-1),Vector2i(1,0),Vector2i(1,1)]]
@@ -77,84 +69,138 @@ func setup_grid(N:int):
 			grid[i][j].storage.append(Elem.new())
 	cell_size = xmax / N
 	
-	get_cam_planes()
-	
-func get_cam_planes():
-# Get the current active 3D camera
-	var camera = get_viewport().get_camera_3d()
 
-	if camera:
-		# Retrieve the frustum planes
-		var cam_planes = camera.get_frustum()
-
-		# Access individual planes
-		var near_plane = cam_planes[0]
-		var far_plane = cam_planes[1]
-		var left_plane = cam_planes[2]
-		var top_plane = cam_planes[3]
-		var right_plane = cam_planes[4]
-		var bottom_plane = cam_planes[5]
-
-		# Print the planes for debugging
-		print("Near Plane: ", near_plane)
-		print("Far Plane: ", far_plane)
-		print("Left Plane: ", left_plane)
-		print("Top Plane: ", top_plane)
-		print("Right Plane: ", right_plane)
-		print("Bottom Plane: ", bottom_plane)
-		
-		print("Near Plane: ", cam_planes[CAM_PLANE.NEAR_PLANE])
-		print("Far Plane: ", cam_planes[CAM_PLANE.FAR_PLANE])
-		print("Left Plane: ", cam_planes[CAM_PLANE.LEFT_PLANE])
-		print("Top Plane: ", cam_planes[CAM_PLANE.TOP_PLANE])
-		print("Right Plane: ", cam_planes[CAM_PLANE.RIGHT_PLANE])
-		print("Bottom Plane: ", cam_planes[CAM_PLANE.BOTTOM_PLANE])		
-	else:
-		print("No active camera found!")
-		
 func world_coords_to_grid_coords(px:float,py:float):
 	return Vector2i( floor((float(px)) / cell_size),floor((float(py)) / cell_size))
 
-# Called when the node enters the scene tree for the first time.
-func _ready() -> void:
-	setup_grid(grid_size)
-	if not Engine.is_editor_hint():
-		create_collision_shapes()
-	for i in grid_size:
-		for j in grid_size:
-			var dup = tiles_256.duplicate()
-			add_child(dup)
-			dup.global_position = Vector3(float(i)*128.0, 0.0,float(j)*128.0)
-			for ch in dup.get_children():
-				((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial).set_shader_parameter("node_pos",Vector2(float(i)*128.0,float(j)*128.0 ))
-				(ch as MeshInstance3D).custom_aabb = grid[i][j].storage[0].aabb
-				(ch as MeshInstance3D).custom_aabb.position.x = 0.0
-				(ch as MeshInstance3D).custom_aabb.position.z = 0.0			 
-				#print("Custom: " + var_to_str((ch as MeshInstance3D).custom_aabb))
-				#print("Actual: " + var_to_str((ch as MeshInstance3D).get_aabb()))
+# grid utilities ...
+func kill_grid_cell(i:int, j:int):
+	for k in grid[i][j].storage:
+		grid[i][j].storage.erase(k)
+
+func activate_grid_cell(ii:int, jj:int):
+	for k in grid[ii][jj].storage.size():
+		var scene = load( grid[ii][jj].storage[k].mesh)
+		var p = scene.instantiate()
+		#p.global_position = grid[i][j].storage[k].position
+		p.transform.basis = grid[ii][jj].storage[k].basis
+		p.transform.origin = grid[ii][jj].storage[k].position
+		print(p.transform)
+
+		add_child(p)
+			
+func flatten_grid_pattern_at_point(p:Vector2i):
+	for i in range(0,3):
+		for j in range(0,3):
+			if not (i==1 and j==1):
+				var px = grid_pattern[i][j].x +p.x
+				var py = grid_pattern[i][j].y +p.y
+				if px >= 0 and px < 8 and py >= 0 and py < 8 :
+					activate_grid_cell(px,py)
 
 
 
-
-
-		
-		
-
-
-func _process(delta: float) -> void:
-	pass
 
 				
+#=======================================================================================
+# Colliders
+#=======================================================================================
+
+func create_collision()->void:
+	if not Engine.is_editor_hint() and first_time:
+		first_time = false
+		# first call a function adapted from SimpleTerrain ...
+		# this could do all the work, including AABB's and occluders...
+		create_collision_shape()
+		
+		# but we scane the heightmap twice at the moment
+		var grid_size = xmax / resolution
+		for i in range(grid_size):
+			for j in range(grid_size):
+				var rect:Rect2
+				rect.position = Vector2(float(i)*128.0,float(j)*128.0)
+				rect.size = Vector2(resolution, resolution)	
+				thread_generate_mesh(rect)	
+				
+				
+func create_collision_shape():
+	var static_body : StaticBody3D = get_node_or_null("StaticBody3D")
+	if static_body == null:
+		static_body = StaticBody3D.new()
+		static_body.name = "StaticBody3D"
+		add_child(static_body)
+		if Engine.is_editor_hint():
+			static_body.owner = get_tree().edited_scene_root
+	var collision_shape : CollisionShape3D = static_body.get_node_or_null("CollisionShape3D")
+	if collision_shape == null:
+		collision_shape = CollisionShape3D.new()
+		collision_shape.name = "CollisionShape3D"
+		static_body.add_child(collision_shape)
+		if Engine.is_editor_hint():
+			collision_shape.owner = get_tree().edited_scene_root
+	
+	collision_shape.position.x =  xmax /2
+	collision_shape.position.z =  xmax /2
+	#var xmax = _get_num_verts_along_edge_total(collision_shape_resolution)
+	#var scale_xz = (terrain_xz_scale / (_get_num_verts_along_chunk_edge(collision_shape_resolution) - 1))
+	collision_shape.scale = Vector3(scale_xz, scale_xz, scale_xz)
+	
+	# This was causing lag on level spawn but it got fixed randomly at some point? Maybe 4.2.1 bump?
+	collision_shape.shape = make_heightmap_shape(get_collision_shape_data(Vector2i(xmax,xmax), scale_xz), Vector2i(xmax,xmax))
+
+# also adapted from SimpleTerrain
+func make_heightmap_shape(data : PackedFloat32Array, data_width_depth : Vector2i) -> HeightMapShape3D:
+	var shape := HeightMapShape3D.new()
+	shape.map_width = data_width_depth.x
+	shape.map_depth = data_width_depth.y
+	shape.map_data = data
+	return shape
+
+# adapted from simple terrain
+func get_collision_shape_data(num_verts_along_edge_total : Vector2i, height_scale_fix : float) -> PackedFloat32Array:
+	#var scale_xz = (get_total_size() / (num_verts_along_edge_total - 1)).x
+	var map_data := PackedFloat32Array()
+	map_data.resize(xmax * xmax)
+	
+	# Since we must scale the collision shape uniformly, we modify the height of each point, 
+	# normalizing it to the terrain_height_scale value
+	var scale_y_to_normalize = HEIGHT_SCALE / height_scale_fix
+	var heightmap_image = hmap
+	#if heightmap_image.is_compressed():
+		#heightmap_image.decompress()
+	#var splatmap_image = UTILS.get_image_texture_with_fallback(splatmap_texture, Color.BLACK).get_image()
+	#if splatmap_image.is_compressed():
+		#splatmap_image.decompress()
+	# Make a copy before editing because if we don't it triggers collision shape recompute on every
+	# assignment which lags the editor a lot.
+	var m = -1.0
+	for i in map_data.size():
+		# Is this right or should be num_verts_along_edge_total + 1
+		var x = i % xmax
+		var z = floor(i / xmax)
+
+		#var hpixel_x := int((float(x) / float(xmax-1)) * float(heightmap_image.get_width()-1))
+		#var hpixel_y := int((float(z) / float(xmax-1)) * float(heightmap_image.get_height()-1))
+		map_data[i] = heightmap_image.get_pixel(x, z).r * scale_y_to_normalize
+		
+		#update the grid
+		
+		#var _I = x / cell_size
+		#var _J = z / cell_size
+		#if grid[ _I][_J].storage[0].aabb.position.y > map_data[i]:
+			#grid[ _I][_J].storage[0].aabb.position.y = map_data[i]
+		#if grid[ _I][_J].storage[0].aabb.end.y < map_data[i]:
+			#grid[ _I][_J].storage[0].aabb.end.y = map_data[i]
+			
+		# Create holes for parts of splatmap that are transparent
+		#if not _collision_shape_has_vert_at(x, z, splatmap_image):
+			#map_data[i] = NAN
+	return map_data
 
 
-
-
-
-
-var hmap:Image 
-
-
-
+#=======================================================================================
+# heightmap accessor functions
+#=======================================================================================
 func load_image():
 	hmap = LoadLargeHeightMap("res://assets/Heightmaps/ISLAND_4k_2/height2.exr")
 	#(collision_shape_3d.shape as HeightMapShape3D).map_data = hmap.get_data().to_float32_array()
@@ -168,165 +214,122 @@ func LoadLargeHeightMap(filename:String)->Image:
 func get_altitude(pos:Vector3)->float:
 	
 	if hmap:
-		if pos.x < 4096 and pos.z < 4096:
-			return hmap.get_pixel(pos.x,pos.z).r* 500.0
+		if pos.x < xmax and pos.z < xmax:
+			return hmap.get_pixel(pos.x,pos.z).r* HEIGHT_SCALE
 		
 		return hmap.get_pixel(0,0).r 
 	else:
 		print("error no heightmap")
 		return 0.0
 			
-	
 
-
-
-
-func generate_mesh_data(rect: Rect2) -> Array:
-	var grid_size = resolution + 1
+#=======================================================================================
+# get AABB and Occluder
+#=======================================================================================
+func generate_mesh_data(rect: Rect2) -> Dictionary:
+	var subdiv_size = resolution + 1
 	var step_size = rect.size.x / resolution
 	
 	# Step 1: Generate Base Height Data
-	var height_data = PackedFloat32Array()
-	height_data.resize(grid_size * grid_size)
+	#height_data.resize(subdiv_size * subdiv_size)
 	
 	var rect2 = rect
 	rect2.size.x +=1
 	rect2.size.y +=1
 	
-	
-	#var h_region = hmap.get_region(rect2)
-	#var texture:Texture2D = ImageTexture.create_from_image(h_region)
-	min_h = 100000	
-	max_h = -100000	
+
+	var h_min = 100000	
+	var h_max = -100000	
 	#texture.
-	for z in grid_size:
-		for x in grid_size:
+	for z in subdiv_size:
+		for x in subdiv_size:
 			var pos_x = rect.position.x + (x * step_size)
 			var pos_z = rect.position.y + (z * step_size)
 			var h:float = get_altitude(Vector3(pos_x, 0, pos_z))
-			if h < min_h:
-				min_h = h
-			if h > max_h:
-				max_h = h
-			height_data[x + z * grid_size] = h
-	
-	# Step 3: Build the Mesh Arrays
-	var vertices = PackedVector3Array()
-	var uvs = PackedVector2Array()
-	var indices = PackedInt32Array()
-	
-	vertices.resize(grid_size * grid_size)
-	uvs.resize(grid_size * grid_size)
-	
-	for z in grid_size:
-		for x in grid_size:
-			var i = x + z * grid_size
-			var pos_x =  (x * step_size)
-			var pos_z =  (z * step_size)
-			
-			vertices[i] = Vector3(pos_x, height_data[i], pos_z)
-			uvs[i] = Vector2( (rect.position.x+float(x)) / (4096.0), (rect.position.y+float(z)) / (4096.0))
+			if h < h_min:
+				h_min = h
+			if h > h_max:
+				h_max = h
+			#height_data[x + z * subdiv_size] = h
 
-	# Indices logic
-	for z in resolution:
-		for x in resolution:
-			var i = x + z * grid_size
-			indices.append(i)
-			indices.append(i + 1)
-			indices.append(i + grid_size)
-			indices.append(i + 1)
-			indices.append(i + grid_size + 1)
-			indices.append(i + grid_size)
-
-	var arrays = []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = vertices
-	arrays[Mesh.ARRAY_TEX_UV] = uvs
-	arrays[Mesh.ARRAY_INDEX] = indices
+	return {
+				"h_min":h_min,
+				"h_max":h_max
+			}
 	
-	return arrays
-	
-func thread_generate_mesh(node: Rect2)->AABB:
+# no longer threaded
+func thread_generate_mesh(node: Rect2)->void:
 	# 1. Generate the raw data
 	var mesh_data = generate_mesh_data(node)
-	
-	# 2. DO THE HEAVY LIFTING HERE (Off the main thread)
-	var array_mesh = ArrayMesh.new()
-	array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, mesh_data)
-	#
-	var st = SurfaceTool.new()
-	st.create_from(array_mesh, 0)
-	st.generate_normals()
-	var final_mesh = st.commit() # This is now ready for the GPU
-	#
 
-	
 	# Pass the completed mesh to the main thread
-	#call_deferred("finalize_node", node, final_mesh, min_h)	
-	return finalize_node(node, final_mesh, min_h)
+	#call_deferred("finalize_node", node, mesh_data)	
+	return finalize_node( node, mesh_data )
 
-func finalize_node(node: Rect2, final_mesh: Mesh,h:float) ->AABB:
+# no real mesh here, just an AABB and an occluder
+func finalize_node(rect: Rect2, h_dict: Dictionary) ->void:
 	#pending_nodes = max(0, pending_nodes - 1)
-	
-	# Create the instance - this is now very light
-	var mesh_instance = MeshInstance3D.new()
-	mesh_instance.mesh = final_mesh
-	#mesh_instance.material_override = load("uid://dlywemjv2a6fg")
-	#(mesh_instance.material_override as ShaderMaterial).set_shader_parameter("global_map",albedo_tex)
-	#(mesh_instance.material_override as ShaderMaterial).set_shader_parameter("splat",splat1)
-	#(mesh_instance.material_override as ShaderMaterial).set_shader_parameter("splat2",splat2)
-	#
-	#mesh_instance.set_meta("node", node)
-	
 
-
-	
 	var occ = OccluderInstance3D.new()
 	var box_occ = BoxOccluder3D.new()
-	box_occ.size = Vector3(resolution, h, resolution)
+	box_occ.size = Vector3(cell_size, h_dict["h_min"], cell_size)
 	occ.occluder = box_occ
 	
-	var aabb_pos:Vector3 = Vector3(node.position.x,min_h,node.position.y)
-	var aabb_size:Vector3 = Vector3(128.0,max_h-min_h,128.0)
-	var aabb:AABB = AABB(aabb_pos,aabb_size)
+	var aabb_pos:Vector3 = Vector3(0.0,h_dict["h_min"],0.0)
+	var aabb_size:Vector3 = Vector3(cell_size,h_dict["h_max"]-h_dict["h_min"],cell_size)
+	var aabb:AABB = AABB(aabb_pos, aabb_size)
 	
 	
 	var box = MeshInstance3D.new()
 	box.mesh = BoxMesh.new()
-	(box.mesh as BoxMesh).size =  Vector3(resolution, h, resolution)
-#
-	
-	#add the mesh to the scene
-	add_child(mesh_instance)
-	##set the position
-	mesh_instance.global_position = Vector3(node.position.x,0.0,node.position.y)
-	## create the collision shape
-	mesh_instance.create_trimesh_collision()	
-	mesh_instance.visible = false
-	## get the static body
-	#var static_body = mesh_instance.get_child(0) 
-	#if static_body == null:
-		#print("cant find collision model")
-	#### reparent this to the main scene
-	#static_body.reparent(self,true)	
-	#static_body.global_position  = Vector3(node.position.x,0.0,node.position.y)
-	#static_body.set_collision_layer_value(1,true)
-	#static_body.set_collision_mask_value(1,true)
-	### queue free the mesh
-	#mesh_instance.queue_free()
-	
-	#add_child(occ)
-	#occ.global_position = Vector3(node.position.x+resolution/2.0, h/2.0, node.position.y+resolution/2.0)	
+	(box.mesh as BoxMesh).size =  Vector3(resolution, h_dict["h_min"], resolution)
+
+	add_child(occ)
+	occ.global_position = Vector3(rect.position.x+cell_size/2.0, h_dict["h_min"]/2.0, rect.position.y+cell_size/2.0)	
 	#add_child(box)
 	#box.global_position = Vector3(node.position.x+resolution/2.0, h/2.0, node.position.y+resolution/2.0)	
+	var grid_x = int(rect.position.x / cell_size)
+	var grid_y = int(rect.position.y / cell_size)
 	
-#	
-
-	return aabb
+	grid[ grid_x ][ grid_y ].storage[0].aabb = aabb
+	
 
 
 var first_time:bool = true	
-#func _process(delta:float) -> void:
+
+
+#=======================================================================================
+# Standard Functions
+#=======================================================================================
+
+# Called when the node enters the scene tree for the first time.
+# This really needs to cache stuff computed in the Editor and run that in the game
+func _ready() -> void:
+	setup_grid(grid_size)
+	if not Engine.is_editor_hint():
+		load_image()
+		create_collision()
+	for i in grid_size:
+		for j in grid_size:
+			#grid[i][j].storage[0].aabb = AABB(Vector3(0.0, 100000, 0.0), Vector3(cell_size, 1000, cell_size))
+			#grid[i][j].storage[0].aabb.end.y = -100000
+			var dup = tiles_256.duplicate()
+			add_child(dup)
+			dup.global_position = Vector3(float(i)*128.0, 0.0,float(j)*128.0)
+			for ch in dup.get_children():
+				((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial).set_shader_parameter("HEIGHT_SCALE",HEIGHT_SCALE)
+				(ch as MeshInstance3D).custom_aabb = grid[i][j].storage[0].aabb
+				# compute the AABB size
+				#var aabb_size = grid[i][j].storage[0].aabb.end.y - grid[i][j].storage[0].aabb.position.y
+				#(ch as MeshInstance3D).custom_aabb.size.y = aabb_size 
+				#print("Custom: " + var_to_str((ch as MeshInstance3D).custom_aabb))
+				#print("Actual: " + var_to_str((ch as MeshInstance3D).get_aabb()))
+
+
+
+
+func _process(delta: float) -> void:
+	pass
 
 
 			

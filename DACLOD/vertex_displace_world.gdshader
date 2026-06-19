@@ -16,7 +16,8 @@ uniform sampler2D texture_roughness : hint_roughness_r, filter_linear_mipmap, re
 
 uniform float specular : hint_range(0.0, 1.0, 0.01);
 uniform float metallic : hint_range(0.0, 1.0, 0.01);
-uniform vec2 node_pos = vec2(0.0,0.0);
+
+uniform float HEIGHT_SCALE = 500.0;
 
 uniform vec3 uv1_scale;
 uniform vec3 uv1_offset;
@@ -24,6 +25,8 @@ uniform vec3 uv2_scale;
 uniform vec3 uv2_offset;
 varying vec2 scale_uv;
 varying vec3 world_pos;
+
+
 vec4 sample_middle_of_pixel(sampler2D tex, vec2 uv) {
 	// Sample from exact middle of each pixel to ensure same result as in collision shape calculation.
 	vec2 texture_coords_in_px = floor(uv * (vec2(textureSize(tex, 0)) - 1.0));

@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://byvxp4664eau2" path="res://hmap_loader.gd" id="1_nkh26"]
 [ext_resource type="Material" uid="uid://cs4hqr707kbit" path="res://vertex_displace_World.tres" id="2_nkh26"]
-[ext_resource type="Script" uid="uid://by6xmx55yvg0d" path="res://camera_3d.gd" id="3_75cqa"]
+[ext_resource type="Script" uid="uid://bw4r5sufd8cuj" path="res://Player.gd" id="3_75cqa"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o6dus"]
 
@@ -174,7 +174,7 @@ sky_material = SubResource("ProceduralSkyMaterial_j2xdx")
 background_mode = 2
 sky = SubResource("Sky_5we6d")
 
-[sub_resource type="SphereShape3D" id="SphereShape3D_75cqa"]
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_0yhda"]
 
 [node name="ScaneRoot" type="Node3D" unique_id=1334672192]
 
@@ -224,11 +224,12 @@ environment = SubResource("Environment_0rrkm")
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment" unique_id=1629991465]
 transform = Transform3D(0.81109446, 0.5849152, 0, -0.5849152, 0.81109446, 0, 0, 0, 1, 0, 0, 0)
 
-[node name="Camera3D" type="Camera3D" parent="." unique_id=2042230522]
-transform = Transform3D(0.99948776, 0, -0.03200382, 0.00960617, 0.95388997, 0.30000266, 0.030528128, -0.30015647, 0.9534013, 187.46632, 695.7507, 1227.5643)
+[node name="Player" type="CharacterBody3D" parent="." unique_id=60752118]
+transform = Transform3D(0.99948776, -1.3031837e-08, -0.032003827, 0.00960617, 0.95388997, 0.30000272, 0.030528128, -0.30015647, 0.9534013, 2279.8726, 761.36475, 1596.439)
 script = ExtResource("3_75cqa")
 
-[node name="StaticBody3D" type="StaticBody3D" parent="Camera3D" unique_id=598688680]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Player" unique_id=572356236]
+shape = SubResource("CapsuleShape3D_0yhda")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Camera3D/StaticBody3D" unique_id=572356236]
-shape = SubResource("SphereShape3D_75cqa")
+[node name="Camera3D" type="Camera3D" parent="Player" unique_id=2042230522]
+transform = Transform3D(1, -9.313226e-10, -3.7252903e-09, -9.313226e-10, 1, -2.9802322e-08, 5.5879354e-09, 0, 1, 0, 0, 0)

@@ -24,7 +24,7 @@ window/vsync/vsync_mode=0
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/SimpleTerrain/plugin.cfg", "res://addons/infinite_heightmap_terrain/plugin.cfg", "res://addons/open-world-database/plugin.cfg", "res://addons/terraincrafter/plugin.cfg")
+enabled=PackedStringArray()
 
 [input]
 
