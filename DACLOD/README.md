@@ -24,8 +24,7 @@ In project
 ## Current Issues
 * weirdness of visible chunks when first loaded before player moves
 * the loading time is slow if collision is enabled (in the script)
-* hard coded to specific image size, not tested on larger or alternative maps
-* occluders don't seem to help
+* hard coded to specific image size, not tested on larger or alternative maps.
 
 ## Credits
 The quadtree terrain that I started working with recently.
