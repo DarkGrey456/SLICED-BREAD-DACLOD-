@@ -1,8 +1,10 @@
 extends CharacterBody3D
 
-
+func _ready() -> void:
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _process(delta: float) -> void:
+	velocity = Vector3.ZERO
 	if Input.is_action_pressed("pitch_down"):
 		velocity =  -global_basis.z *100.0
 	if Input.is_action_pressed("pitch_up"):
