@@ -35,7 +35,7 @@ Simple Terrain:
 great video tutorial and excellent code that I had to dive into for help with creating the collision model.
 https://github.com/majikayogames/SimpleTerrain
 
-hterrain (great terrain tool with vertex displacement shading for heightmaps although not for textures, the idea for instancing the chunks is from here. CLOD based. Maybe have consult the code for improving the shader, currently have unpack_normal().
+hterrain: great terrain tool with vertex displacement shading for heightmaps although not for textures, the idea for instancing the chunks is from here. CLOD based. Maybe have consult the code for improving the shader, currently have unpack_normal().
 https://github.com/Zylann/godot_heightmap_plugin
 ## License
 MIT. I hope this helps somebody in their Godot journey!
