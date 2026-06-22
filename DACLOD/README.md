@@ -28,9 +28,11 @@ In project
 * occluders don't seem to help
 
 ## Credits
+The quadtree terrain that I started working with recently.
+
 https://github.com/SpaghettiCodeMasterThe/Godot-Quadtree-Terrain
 
-simple terrain
+Simple Terrain: 
 great video tutorial and excellent code that I had to dive into for help with creating the collision model.
 https://github.com/majikayogames/SimpleTerrain
 
