@@ -9,6 +9,31 @@ extends Node3D
 #@onready var collision_shape_3d: CollisionShape3D = $"../StaticBody3D/CollisionShape3D"
 var hmap:Image 
 
+var nmap : Image
+var splat_map:Image
+var gpuNormals :Texture2D #=  ImageTexture.new()
+var gpuSplat :Texture2D #= ImageTexture.new()
+
+var alb1:Image
+var alb2:Image
+var alb3:Image
+var alb4:Image
+
+var norm1:Image
+var norm2:Image
+var norm3:Image
+var norm4:Image
+
+var alb_h_1:Texture2D
+var alb_h_2:Texture2D
+var alb_h_3:Texture2D
+var alb_h_4:Texture2D
+
+var norm_rough_1:Texture2D
+var norm_rough_2:Texture2D
+var norm_rough_3:Texture2D
+var norm_rough_4:Texture2D
+
 var resolution:int = 128
 var occluders = []
 var min_h = 100000
@@ -162,6 +187,7 @@ func get_collision_shape_data(num_verts_along_edge_total : Vector2i, height_scal
 	var map_data := PackedFloat32Array()
 	map_data.resize(xmax * xmax)
 	
+
 	# Since we must scale the collision shape uniformly, we modify the height of each point, 
 	# normalizing it to the terrain_height_scale value
 	var scale_y_to_normalize = HEIGHT_SCALE / height_scale_fix
@@ -173,6 +199,8 @@ func get_collision_shape_data(num_verts_along_edge_total : Vector2i, height_scal
 		#splatmap_image.decompress()
 	# Make a copy before editing because if we don't it triggers collision shape recompute on every
 	# assignment which lags the editor a lot.
+
+		
 	var m = -1.0
 	for i in map_data.size():
 		# Is this right or should be num_verts_along_edge_total + 1
@@ -182,7 +210,18 @@ func get_collision_shape_data(num_verts_along_edge_total : Vector2i, height_scal
 		#var hpixel_x := int((float(x) / float(xmax-1)) * float(heightmap_image.get_width()-1))
 		#var hpixel_y := int((float(z) / float(xmax-1)) * float(heightmap_image.get_height()-1))
 		map_data[i] = heightmap_image.get_pixel(x, z).r * scale_y_to_normalize
+		var normal:Color = nmap.get_pixel(x,z)
+		var splat:Color = splat_map.get_pixel(x,z)
 		
+		var m_uv =Vector2( (x / 128.0) - float(int(x / 128)),
+						 (z / 128.0) - float(int(z / 128)))
+		var h1 = alb1.get_pixelv( m_uv*4.0 ).a
+		var h2 = alb2.get_pixelv( m_uv*4.0 ).a
+		var h3 = alb3.get_pixelv( m_uv*4.0 ).a
+		var h4 = alb4.get_pixelv( m_uv*2.0 ).a	
+		
+		var hval:float = (splat.r* h1 + splat.g * h4 + splat.b * h2 + 0.25*(1.0-splat.g)* h3);
+		map_data[i] += 2.5*hval
 		#update the grid
 		
 		#var _I = x / cell_size
@@ -201,15 +240,66 @@ func get_collision_shape_data(num_verts_along_edge_total : Vector2i, height_scal
 #=======================================================================================
 # heightmap accessor functions
 #=======================================================================================
-func load_image():
+func load_image()->void:
 	hmap = LoadLargeHeightMap("res://assets/Heightmaps/ISLAND_4k_2/height2.exr")
-	#(collision_shape_3d.shape as HeightMapShape3D).map_data = hmap.get_data().to_float32_array()
+	#self.HEIGHT_SCALE/xmax
+	create_normal_map(hmap, 500.0, "res://assets/Heightmaps/ISLAND_4k_2/normal_map.png")
+	
+
+	
+	gpuSplat = load("res://assets/Heightmaps/ISLAND_4k_2/splat.png")
+	
+	splat_map = gpuSplat.get_image()
+	if splat_map.is_compressed():
+		splat_map.decompress()
+	
+	load_shader_images()
+
+
+func load_shader_images()->void:
+	alb_h_1 = load("res://assets/textures/slot1_albedo_bump.png")
+	alb_h_2 = load("res://assets/textures/prototype_slot2_albedo_bump.png")
+	alb_h_3 = load("res://assets/textures/slot0_albedo_bump.png")
+	alb_h_4 = load("res://assets/textures/prototype_slot3_albedo_bump.png")
+
+
+	norm_rough_1 = load("res://assets/textures/slot1_normal_roughness.png")
+	norm_rough_2 = load("res://assets/textures/prototype_slot2_normal_roughness.png")
+	norm_rough_3 = load("res://assets/textures/slot0_normal_roughness.png")
+	norm_rough_4 = load("res://assets/textures/prototype_slot3_normal_roughness.png")
+	
+	alb1 = alb_h_1.get_image()
+	alb2 = alb_h_2.get_image()
+	alb3 = alb_h_3.get_image()
+	alb4 = alb_h_4.get_image()
+	
+	if alb1.is_compressed():
+		alb1.decompress()
+	if alb2.is_compressed():
+		alb2.decompress()
+	if alb3.is_compressed():
+		alb3.decompress()
+	if alb4.is_compressed():
+		alb4.decompress()						
+	
+	norm1 = norm_rough_1.get_image()
+	norm2 = norm_rough_2.get_image()
+	norm3 = norm_rough_3.get_image()
+	norm4 = norm_rough_4.get_image()
+	
+
+
 	
 
 func LoadLargeHeightMap(filename:String)->Image:
 	var height:Texture2D = load(filename)
 
 	return height.get_image()
+	
+func LoadTexture(filename:String)->Texture2D:
+	var height:Texture2D = load(filename)
+
+	return height	
 	
 func get_altitude(pos:Vector3)->float:
 	
@@ -222,7 +312,42 @@ func get_altitude(pos:Vector3)->float:
 		print("error no heightmap")
 		return 0.0
 			
+# bump scale is 500.0
+func create_normal_map(height_map:Image, bump_scale:float, path:String)->void:
+	
+	gpuNormals = load(path) 
+	
+	if (gpuNormals == null) :#or gpuNormals.is_empty():
+		nmap = height_map.duplicate(true)
+		nmap.bump_map_to_normal_map(bump_scale)
+		gpuNormals = ImageTexture.new()
+		gpuNormals.create_from_image(nmap)
+	
+		# Save with error checking
+		var save_err := nmap.save_png(path)
+		if save_err != OK:
+			push_error("Failed to save normal map: %s" % path)
+			return
 
+		print("Normal map generated:", path)	
+		
+		
+	
+		# cancel the run and reload, the normal map should work now ... just
+		# a weird problem in that i can't get the nmap 
+
+		if nmap.is_compressed():
+			nmap.decompress()
+	else:
+		nmap = gpuNormals.get_image()
+	# Save with error checking
+	#var save_err := img.save_png(normal_path)
+	#if save_err != OK:
+		#push_error("Failed to save normal map: %s" % normal_path)
+		#return
+#
+	#print("Normal map generated:", normal_path)
+	
 #=======================================================================================
 # get AABB and Occluder
 #=======================================================================================
@@ -298,6 +423,33 @@ func finalize_node(rect: Rect2, h_dict: Dictionary) ->void:
 var first_time:bool = true	
 
 
+func setup_shader()->void:
+	for ch in tiles_256.get_children():
+		((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial)\
+					.set_shader_parameter("HEIGHT_SCALE",HEIGHT_SCALE)
+		((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial)\
+					.set_shader_parameter("normal_map",gpuNormals)
+		((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial)\
+					.set_shader_parameter("texture_albedo",gpuSplat)	
+					
+		((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial)\
+					.set_shader_parameter("alb_h_1",alb_h_1)
+		((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial)\
+					.set_shader_parameter("alb_h_2",alb_h_2)
+		((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial)\
+					.set_shader_parameter("alb_h_3",alb_h_3)		
+		((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial)\
+					.set_shader_parameter("alb_h_4",alb_h_4)
+					
+		((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial)\
+					.set_shader_parameter("norm_r_1",self.norm_rough_1)
+		((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial)\
+					.set_shader_parameter("norm_r_2",norm_rough_2)	
+		((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial)\
+					.set_shader_parameter("norm_r_3",norm_rough_3)	
+		((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial)\
+					.set_shader_parameter("norm_r_4",norm_rough_4)						
+
 #=======================================================================================
 # Standard Functions
 #=======================================================================================
@@ -308,7 +460,13 @@ func _ready() -> void:
 	setup_grid(grid_size)
 	if not Engine.is_editor_hint():
 		load_image()
+		
 		create_collision()
+	
+
+										
+	setup_shader()				
+							
 	for i in grid_size:
 		for j in grid_size:
 			#grid[i][j].storage[0].aabb = AABB(Vector3(0.0, 100000, 0.0), Vector3(cell_size, 1000, cell_size))
@@ -317,7 +475,8 @@ func _ready() -> void:
 			add_child(dup)
 			dup.global_position = Vector3(float(i)*128.0, 0.0,float(j)*128.0)
 			for ch in dup.get_children():
-				((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial).set_shader_parameter("HEIGHT_SCALE",HEIGHT_SCALE)
+
+					
 				(ch as MeshInstance3D).custom_aabb = grid[i][j].storage[0].aabb
 				# compute the AABB size
 				#var aabb_size = grid[i][j].storage[0].aabb.end.y - grid[i][j].storage[0].aabb.position.y

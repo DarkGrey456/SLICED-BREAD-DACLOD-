@@ -60,7 +60,7 @@ vec3 unpack_normal(vec4 rgba) {
 varying vec2 uv_offset;
 
 void vertex() {
-	UV = UV * uv1_scale.xy + uv1_offset.xy;
+	UV =   UV * uv1_scale.xy + uv1_offset.xy;
 	
 	
 	world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
@@ -77,15 +77,15 @@ void vertex() {
 		float h3 =texture(alb_h_3, UV*4.0).a; 
 		float h4 =texture(alb_h_4, UV*2.0).a; 		
 		vec4 albedo_tex = texture(texture_albedo, world_pos.xz/4096.0);
-	//if ( albedo_tex.r > 0.5)
+	//if ( albedo_tex.g > 0.5)
 	{
 		// Height: Enabled
 		vec3 view_dir = normalize(normalize(-VERTEX + EYE_OFFSET) * mat3(TANGENT, -BINORMAL , NORMAL));
 		float hval = (albedo_tex.r* h1 + albedo_tex.g * h4 + albedo_tex.b * h2 + 0.25*(1.0-albedo_tex.g)* h3);
-		float depth = 1.0 - hval;
-		vec2 ofs = UV - view_dir.xy * depth * 1.0 * 0.01;
-		uv_offset = ofs;
-		VERTEX += 5.0*hval * NORMAL;
+		//float depth = 1.0 - hval;
+		//vec2 ofs = UV - view_dir.xy * depth * 1.0 * 0.01;
+		//uv_offset = ofs;
+		VERTEX.y += 2.5*hval;// 5.0 * hval * NORMAL - 2.5 * NORMAL;
 	}			
 	
 }
@@ -93,7 +93,7 @@ void vertex() {
 
 
 void fragment() {
-	vec2 base_uv = uv_offset;
+	vec2 base_uv = UV;
 	bool un_shaded = false;
 	vec4 albedo_tex = texture(texture_albedo, world_pos.xz/4096.0);
 	if( un_shaded ){

@@ -24,18 +24,11 @@ In project
 ## Current Issues
 * weirdness of visible chunks when first loaded before player moves
 * the loading time is slow if collision is enabled (in the script)
-* hard coded to specific image size, not tested on larger or alternative maps.
+* hard coded to specific image size, not tested on larger or alternative maps
+* occluders don't seem to help
 
 ## Credits
-The quadtree terrain that I started working with recently.
-
 https://github.com/SpaghettiCodeMasterThe/Godot-Quadtree-Terrain
 
-Simple Terrain: 
-great video tutorial and excellent code that I had to dive into for help with creating the collision model.
-https://github.com/majikayogames/SimpleTerrain
-
-hterrain: great terrain tool with vertex displacement shading for heightmaps although not for textures, the idea for instancing the chunks is from here. CLOD based. Maybe have consult the code for improving the shader, currently have unpack_normal().
-https://github.com/Zylann/godot_heightmap_plugin
 ## License
 MIT. I hope this helps somebody in their Godot journey!
