@@ -3,6 +3,7 @@
 shader_type spatial;
 render_mode blend_mix, depth_draw_opaque, cull_back, specular_schlick_ggx;
 
+uniform vec4 uv_scale = vec4(9.0,18.0, 9.0, 2.0);
 uniform vec4 albedo : source_color;
 uniform sampler2D texture_albedo : source_color, filter_linear_mipmap, repeat_enable;
 uniform sampler2D texture_normal : source_color, repeat_enable;
@@ -65,17 +66,17 @@ void vertex() {
 	
 	world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	if (VERTEX.y > -1.0)
-		VERTEX.y =  500.0*texture(texture_height, vec2(world_pos.x/4096.0,world_pos.z/4096.0)).r;
+		VERTEX.y =  HEIGHT_SCALE*texture(texture_height, vec2(world_pos.x/4096.0,world_pos.z/4096.0)).r;
 	
 	vec3 norm = unpack_normal( texture(texture_normal, vec2(world_pos.x/4096.0,world_pos.z/4096.0))).rgb;	
 	norm.b = ( 1.0 - norm.r*norm.r - norm.g*norm.g);
 
 	NORMAL = norm;//normalize(norm);// (VIEW * vec4(norm, 1.0)).xyz;
 	
-		float h1 =texture(alb_h_1, UV*4.0).a; 
-		float h2 =texture(alb_h_2, UV*4.0).a; 
-		float h3 =texture(alb_h_3, UV*4.0).a; 
-		float h4 =texture(alb_h_4, UV*2.0).a; 		
+		float h1 =texture(alb_h_1, UV*uv_scale.x).a; 
+		float h2 =texture(alb_h_2, UV*uv_scale.y).a; 
+		float h3 =texture(alb_h_3, UV*uv_scale.z).a; 
+		float h4 =texture(alb_h_4, UV*uv_scale.w).a; 		
 		vec4 albedo_tex = texture(texture_albedo, world_pos.xz/4096.0);
 	//if ( albedo_tex.g > 0.5)
 	{
@@ -101,23 +102,29 @@ void fragment() {
 	}
 	else {
 
-		vec4 alb1 =texture(alb_h_1, UV*4.0); 
-		vec4 alb2 =texture(alb_h_2, UV*4.0); 
-		vec4 alb3 =texture(alb_h_3, UV*4.0); 
-		vec4 alb4 =texture(alb_h_4, UV*2.0); 
-		vec4 n1 =texture(norm_r_1, UV*4.0); 
-		vec4 n2 =texture(norm_r_2, UV*4.0); 
-		vec4 n3 =texture(norm_r_3, UV*4.0); 
-		vec4 n4 =texture(norm_r_4, UV*2.0); 	
-		NORMAL_MAP = (albedo_tex.r*n1.rgb + albedo_tex.g * n4.rgb + albedo_tex.b * n2.rgb + 0.25*(1.0-albedo_tex.g)* n3.rgb)/2.0 ;
+		vec4 alb1 =texture(alb_h_1, UV*uv_scale.x); 
+		vec4 alb2 =texture(alb_h_2, UV*uv_scale.y); 
+		vec4 alb3 =texture(alb_h_3, UV*uv_scale.z); 
+		vec4 alb4 =texture(alb_h_4, UV*uv_scale.w); 
+		vec4 n1 =texture(norm_r_1, UV*uv_scale.x); 
+		vec4 n2 =texture(norm_r_2, UV*uv_scale.y); 
+		vec4 n3 =texture(norm_r_3, UV*uv_scale.z); 
+		vec4 n4 =texture(norm_r_4, UV*uv_scale.w); 
+		float roughness_tex = albedo_tex.r* n1.a + albedo_tex.g * n4.a + albedo_tex.b * n2.a + 0.25*(1.0-albedo_tex.g)* n3.a;
+		ROUGHNESS = roughness_tex * roughness*2.5;	
+		//n1 = vec4(unpack_normal(n1),1.0);
+		//n2 = vec4(unpack_normal(n2),1.0);
+		//n3 = vec4(unpack_normal(n3),1.0);
+		//n4 = vec4(unpack_normal(n4),1.0);
+		NORMAL_MAP = normalize(albedo_tex.r*n1.rgb + albedo_tex.g * n4.rgb + albedo_tex.b * n2.rgb + 0.25*(1.0-albedo_tex.g)* n3.rgb) /2.0;
 		ALBEDO =  albedo_tex.r * alb1.rgb + albedo_tex.g * alb4.rgb + albedo_tex.b * alb2.rgb + 0.25*(1.0-albedo_tex.g)* alb3.rgb + 0.1*albedo_tex.b;
 
 	}
-	float metallic_tex = dot(texture(texture_metallic, base_uv), metallic_texture_channel);
-	METALLIC = metallic_tex * metallic;
-	SPECULAR = specular;
+	//ALBEDO *= 0.5;
+	//float metallic_tex = dot(texture(texture_metallic, base_uv), metallic_texture_channel);
+	//METALLIC = metallic_tex * metallic;
+	//SPECULAR = specular;
 
-	vec4 roughness_texture_channel = vec4(1.0, 0.0, 0.0, 0.0);
-	float roughness_tex = dot(texture(texture_roughness, base_uv), roughness_texture_channel);
-	ROUGHNESS = roughness_tex * roughness;
+
+
 }

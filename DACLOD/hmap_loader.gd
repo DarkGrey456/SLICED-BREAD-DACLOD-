@@ -3,16 +3,17 @@
 extends Node3D
 
 
-@onready var tiles_256: Node3D = $tiles_257
+@onready var tiles_256: Node3D = $tiles_256
 
 
 #@onready var collision_shape_3d: CollisionShape3D = $"../StaticBody3D/CollisionShape3D"
+@export var height_map_texture:Texture2D
 var hmap:Image 
 
 var nmap : Image
 var splat_map:Image
 var gpuNormals :Texture2D #=  ImageTexture.new()
-var gpuSplat :Texture2D #= ImageTexture.new()
+@export var gpuSplat :Texture2D #= ImageTexture.new()
 
 var alb1:Image
 var alb2:Image
@@ -24,15 +25,17 @@ var norm2:Image
 var norm3:Image
 var norm4:Image
 
-var alb_h_1:Texture2D
-var alb_h_2:Texture2D
-var alb_h_3:Texture2D
-var alb_h_4:Texture2D
+@export var alb_h_1:Texture2D
+@export var alb_h_2:Texture2D
+@export var alb_h_3:Texture2D
+@export var alb_h_4:Texture2D
 
-var norm_rough_1:Texture2D
-var norm_rough_2:Texture2D
-var norm_rough_3:Texture2D
-var norm_rough_4:Texture2D
+@export var norm_rough_1:Texture2D
+@export var norm_rough_2:Texture2D
+@export var norm_rough_3:Texture2D
+@export var norm_rough_4:Texture2D
+
+@export var UV_SCALE:Vector4 = Vector4(18.0,18.0, 18.0,2.0)
 
 var resolution:int = 128
 var occluders = []
@@ -215,10 +218,10 @@ func get_collision_shape_data(num_verts_along_edge_total : Vector2i, height_scal
 		
 		var m_uv =Vector2( (x / 128.0) - float(int(x / 128)),
 						 (z / 128.0) - float(int(z / 128)))
-		var h1 = alb1.get_pixelv( m_uv*4.0 ).a
-		var h2 = alb2.get_pixelv( m_uv*4.0 ).a
-		var h3 = alb3.get_pixelv( m_uv*4.0 ).a
-		var h4 = alb4.get_pixelv( m_uv*2.0 ).a	
+		var h1 = alb1.get_pixelv( m_uv*UV_SCALE.x ).a
+		var h2 = alb2.get_pixelv( m_uv*UV_SCALE.y ).a
+		var h3 = alb3.get_pixelv( m_uv*UV_SCALE.z ).a
+		var h4 = alb4.get_pixelv( m_uv*UV_SCALE.w ).a	
 		
 		var hval:float = (splat.r* h1 + splat.g * h4 + splat.b * h2 + 0.25*(1.0-splat.g)* h3);
 		map_data[i] += 2.5*hval
@@ -243,11 +246,11 @@ func get_collision_shape_data(num_verts_along_edge_total : Vector2i, height_scal
 func load_image()->void:
 	hmap = LoadLargeHeightMap("res://assets/Heightmaps/ISLAND_4k_2/height2.exr")
 	#self.HEIGHT_SCALE/xmax
-	create_normal_map(hmap, 500.0, "res://assets/Heightmaps/ISLAND_4k_2/normal_map.png")
+	create_normal_map(hmap, self.HEIGHT_SCALE, "res://assets/Heightmaps/ISLAND_4k_2/normal_map.png")
 	
 
 	
-	gpuSplat = load("res://assets/Heightmaps/ISLAND_4k_2/splat.png")
+	#gpuSplat = load("res://assets/Heightmaps/ISLAND_4k_2/splat.png")
 	
 	splat_map = gpuSplat.get_image()
 	if splat_map.is_compressed():
@@ -257,16 +260,16 @@ func load_image()->void:
 
 
 func load_shader_images()->void:
-	alb_h_1 = load("res://assets/textures/slot1_albedo_bump.png")
-	alb_h_2 = load("res://assets/textures/prototype_slot2_albedo_bump.png")
-	alb_h_3 = load("res://assets/textures/slot0_albedo_bump.png")
-	alb_h_4 = load("res://assets/textures/prototype_slot3_albedo_bump.png")
-
-
-	norm_rough_1 = load("res://assets/textures/slot1_normal_roughness.png")
-	norm_rough_2 = load("res://assets/textures/prototype_slot2_normal_roughness.png")
-	norm_rough_3 = load("res://assets/textures/slot0_normal_roughness.png")
-	norm_rough_4 = load("res://assets/textures/prototype_slot3_normal_roughness.png")
+	#alb_h_1 = load("res://assets/textures/slot1_albedo_bump.png")
+	#alb_h_2 = load("res://assets/textures/prototype_slot2_albedo_bump.png")
+	#alb_h_3 = load("res://assets/textures/slot0_albedo_bump.png")
+	#alb_h_4 = load("res://assets/textures/prototype_slot3_albedo_bump.png")
+#
+#
+	#norm_rough_1 = load("res://assets/textures/slot1_normal_roughness.png")
+	#norm_rough_2 = load("res://assets/textures/prototype_slot2_normal_roughness.png")
+	#norm_rough_3 = load("res://assets/textures/slot0_normal_roughness.png")
+	#norm_rough_4 = load("res://assets/textures/prototype_slot3_normal_roughness.png")
 	
 	alb1 = alb_h_1.get_image()
 	alb2 = alb_h_2.get_image()
@@ -292,9 +295,9 @@ func load_shader_images()->void:
 	
 
 func LoadLargeHeightMap(filename:String)->Image:
-	var height:Texture2D = load(filename)
+	#var height:Texture2D = load(filename)
 
-	return height.get_image()
+	return height_map_texture.get_image()
 	
 func LoadTexture(filename:String)->Texture2D:
 	var height:Texture2D = load(filename)
@@ -305,26 +308,31 @@ func get_altitude(pos:Vector3)->float:
 	
 	if hmap:
 		if pos.x < xmax and pos.z < xmax:
-			return hmap.get_pixel(pos.x,pos.z).r* HEIGHT_SCALE
+			return hmap.get_pixel(pos.x,pos.z).r * HEIGHT_SCALE
 		
 		return hmap.get_pixel(0,0).r 
 	else:
 		print("error no heightmap")
 		return 0.0
 			
-# bump scale is 500.0
+# bump scale is HEIGHT_SCALE
 func create_normal_map(height_map:Image, bump_scale:float, path:String)->void:
 	
 	gpuNormals = load(path) 
 	
 	if (gpuNormals == null) :#or gpuNormals.is_empty():
 		nmap = height_map.duplicate(true)
+		var path_to_hmap = height_map_texture.resource_path
+		
+		var last_slash = path_to_hmap.rfind("/")
+		var substr = path_to_hmap.substr(0,last_slash)
+		
 		nmap.bump_map_to_normal_map(bump_scale)
 		gpuNormals = ImageTexture.new()
 		gpuNormals.create_from_image(nmap)
 	
 		# Save with error checking
-		var save_err := nmap.save_png(path)
+		var save_err := nmap.save_png(substr + "/normal_map.png")
 		if save_err != OK:
 			push_error("Failed to save normal map: %s" % path)
 			return
@@ -425,6 +433,12 @@ var first_time:bool = true
 
 func setup_shader()->void:
 	for ch in tiles_256.get_children():
+		
+		((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial)\
+				.set_shader_parameter("texture_height",self.height_map_texture)
+		((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial)\
+				.set_shader_parameter("uv_scale",UV_SCALE)				
+				
 		((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial)\
 					.set_shader_parameter("HEIGHT_SCALE",HEIGHT_SCALE)
 		((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial)\
