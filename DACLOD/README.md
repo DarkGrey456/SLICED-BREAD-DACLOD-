@@ -30,5 +30,9 @@ In project
 ## Credits
 https://github.com/SpaghettiCodeMasterThe/Godot-Quadtree-Terrain
 
+Also the hTerrain addon.
+
+And the SimpleTerrain addon.
+
 ## License
 MIT. I hope this helps somebody in their Godot journey!
