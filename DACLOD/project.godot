@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="inf_terrain_Test"
-config/features=PackedStringArray("4.6", "Forward Plus")
+config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
 
 [debug]
@@ -20,9 +20,8 @@ settings/stdout/print_fps=true
 
 [display]
 
-window/size/viewport_width=1920
-window/size/viewport_height=1080
-window/size/mode=3
+window/size/viewport_width=1440
+window/size/viewport_height=810
 window/vsync/vsync_mode=0
 
 [editor_plugins]
