@@ -122,7 +122,7 @@ func activate_grid_cell(ii:int, jj:int)->void:
 		add_child(p)
 			
 #world_coords_to_grid_coords(player.x, player.z)
-func flatten_grid_pattern_at_point(p:Vector2i)->void:
+func flatten_grid_pattern_at_point(p:Vector2i, b_threaded:bool)->void:
 	for i in range(0,3):
 		for j in range(0,3):
 
@@ -132,8 +132,11 @@ func flatten_grid_pattern_at_point(p:Vector2i)->void:
 					#activate_grid_cell(px,py)
 				if grid[px][py].storage[0].collider_active == false:
 					grid[px][py].storage[0].collider_active = true
-					WorkerThreadPool.add_task(func():thread_create_colliders(px,py,data_mesh_grid))
-
+					if b_threaded:
+						WorkerThreadPool.add_task(func():thread_create_colliders(px,py,data_mesh_grid))
+					else:
+						#else don't thread
+						thread_create_colliders(px,py,data_mesh_grid)
 
 				
 #=======================================================================================
@@ -183,16 +186,6 @@ func get_mesh_vertices_and_indices(mesh: Mesh) -> Dictionary:
 	return result
 
 
-## Example usage
-#func _ready():
-	#var mesh_instance := $MeshInstance3D
-	#if mesh_instance and mesh_instance.mesh:
-		#var data := get_mesh_vertices_and_indices(mesh_instance.mesh)
-		#print("Vertices count: ", data["vertices"].size())
-		#print("Indices count: ", data["indices"].size())
-
-
-
 @onready var plane__128: MeshInstance3D = $tiles_256/Plane__128
 
 @export var player:CharacterBody3D
@@ -225,123 +218,9 @@ func thread_create_occluders(i:int, j:int, data:Dictionary):
 	rect.size = Vector2(resolution, resolution)	
 	thread_generate_mesh(rect, data, true)					
 				
-# from SimpleTerrain				
-func create_collision_shape():
-	var static_body : StaticBody3D = get_node_or_null("StaticBody3D")
-	if static_body == null:
-		static_body = StaticBody3D.new()
-		static_body.name = "StaticBody3D"
-		add_child(static_body)
-		if Engine.is_editor_hint():
-			static_body.owner = get_tree().edited_scene_root
-	var collision_shape : CollisionShape3D = static_body.get_node_or_null("CollisionShape3D")
-	if collision_shape == null:
-		collision_shape = CollisionShape3D.new()
-		collision_shape.name = "CollisionShape3D"
-		static_body.add_child(collision_shape)
-		if Engine.is_editor_hint():
-			collision_shape.owner = get_tree().edited_scene_root
-	
-	collision_shape.position.x =  xmax /2
-	collision_shape.position.z =  xmax /2
-	#var xmax = _get_num_verts_along_edge_total(collision_shape_resolution)
-	#var scale_xz = (terrain_xz_scale / (_get_num_verts_along_chunk_edge(collision_shape_resolution) - 1))
-	collision_shape.scale = Vector3(scale_xz, scale_xz, scale_xz)
-	
-	# This was causing lag on level spawn but it got fixed randomly at some point? Maybe 4.2.1 bump?
-	collision_shape.shape = make_heightmap_shape(get_collision_shape_data(Vector2i(xmax,xmax), scale_xz), Vector2i(xmax,xmax))
 
-# also from SimpleTerrain
-func make_heightmap_shape(data : PackedFloat32Array, data_width_depth : Vector2i) -> HeightMapShape3D:
-	var shape := HeightMapShape3D.new()
-	shape.map_width = data_width_depth.x
-	shape.map_depth = data_width_depth.y
-	shape.map_data = data
-	return shape
-	
-# make convex collision shape
-func make_convex_shape(data : PackedVector3Array, data_width_depth : Vector2i) -> ConcavePolygonShape3D:
-	var shape :=  ConcavePolygonShape3D.new()#
-	#   HeightMapShape3D.new()
-	shape.set_faces(data)
 
-	return shape	
 
-# adapted from simple terrain
-func get_collision_shape_data(num_verts_along_edge_total : Vector2i, height_scale_fix : float) -> PackedFloat32Array:
-	var map_data := PackedFloat32Array()
-	map_data.resize(xmax * xmax)
-	
-	# Since we must scale the collision shape uniformly, we modify the height of each point, 
-	# normalizing it to the terrain_height_scale value
-	var scale_y_to_normalize = HEIGHT_SCALE / height_scale_fix
-	var heightmap_image = hmap
-
-	var m = -1.0
-	for i in map_data.size():
-		# Is this right or should be num_verts_along_edge_total + 1
-		var x = i % xmax
-		var z = floor(i / xmax)
-
-		map_data[i] = heightmap_image.get_pixel(x, z).r * scale_y_to_normalize
-		var normal:Color = nmap.get_pixel(x,z)
-		var splat:Color = splat_map.get_pixel(x,z)
-		
-		var m_uv =Vector2( (x / 128.0) - float(int(x / 128)),
-						 (z / 128.0) - float(int(z / 128)))
-		var h1 = alb1.get_pixelv( m_uv*UV_SCALE.x ).a
-		var h2 = alb2.get_pixelv( m_uv*UV_SCALE.y ).a
-		var h3 = alb3.get_pixelv( m_uv*UV_SCALE.z ).a
-		var h4 = alb4.get_pixelv( m_uv*UV_SCALE.w ).a	
-		
-		var hval:float = (splat.r* h1 + splat.g * h4 + splat.b * h2 + 0.25*(1.0-splat.g)* h3);
-		map_data[i] += 2.5*hval
-		#update the grid
-		
-		#var _I = x / cell_size
-		#var _J = z / cell_size
-		#if grid[ _I][_J].storage[0].aabb.position.y > map_data[i]:
-			#grid[ _I][_J].storage[0].aabb.position.y = map_data[i]
-		#if grid[ _I][_J].storage[0].aabb.end.y < map_data[i]:
-			#grid[ _I][_J].storage[0].aabb.end.y = map_data[i]
-			
-		# Create holes for parts of splatmap that are transparent
-		#if not _collision_shape_has_vert_at(x, z, splatmap_image):
-			#map_data[i] = NAN
-	return map_data
-
-func get_collision_shape_trimesh_data(num_verts_along_edge_total : Vector2i, height_scale_fix : float) -> PackedVector3Array:
-	var map_data := PackedVector3Array()
-	map_data.resize(xmax * xmax)
-	
-	# Since we must scale the collision shape uniformly, we modify the height of each point, 
-	# normalizing it to the terrain_height_scale value
-	var scale_y_to_normalize = HEIGHT_SCALE / height_scale_fix
-	var heightmap_image = hmap
-
-	var m = -1.0
-	for i in map_data.size():
-		# Is this right or should be num_verts_along_edge_total + 1
-		var x = i % xmax
-		var z = floor(i / xmax)
-
-		map_data[i] = Vector3(float(x), heightmap_image.get_pixel(x, z).r * scale_y_to_normalize, float(z))
-		var normal_pix:Color = nmap.get_pixel(x,z)
-		var normal = Vector3(normal_pix.r, normal_pix.g, normal_pix.b )
-		var splat:Color = splat_map.get_pixel(x,z)
-		
-		var m_uv =Vector2( (x / 128.0) - float(int(x / 128)),
-						 (z / 128.0) - float(int(z / 128)))
-		var h1 = alb1.get_pixelv( m_uv*UV_SCALE.x ).a
-		var h2 = alb2.get_pixelv( m_uv*UV_SCALE.y ).a
-		var h3 = alb3.get_pixelv( m_uv*UV_SCALE.z ).a
-		var h4 = alb4.get_pixelv( m_uv*UV_SCALE.w ).a	
-		
-		var hval:float = (splat.g* h1 +(1.0 -splat.g) * h3)# + splat.b * h2 + 0.25*(1.0-splat.g)* h3);
-		map_data[i] += 5.0 * normal * hval - 2.5 * normal
-
-	
-	return map_data
 	
 #=======================================================================================
 # heightmap accessor functions
@@ -363,17 +242,7 @@ func load_image()->void:
 
 
 func load_shader_images()->void:
-	#alb_h_1 = load("res://assets/textures/slot1_albedo_bump.png")
-	#alb_h_2 = load("res://assets/textures/prototype_slot2_albedo_bump.png")
-	#alb_h_3 = load("res://assets/textures/slot0_albedo_bump.png")
-	#alb_h_4 = load("res://assets/textures/prototype_slot3_albedo_bump.png")
-#
-#
-	#norm_rough_1 = load("res://assets/textures/slot1_normal_roughness.png")
-	#norm_rough_2 = load("res://assets/textures/prototype_slot2_normal_roughness.png")
-	#norm_rough_3 = load("res://assets/textures/slot0_normal_roughness.png")
-	#norm_rough_4 = load("res://assets/textures/prototype_slot3_normal_roughness.png")
-	
+
 	alb1 = alb_h_1.get_image()
 	alb2 = alb_h_2.get_image()
 	alb3 = alb_h_3.get_image()
@@ -451,16 +320,12 @@ func create_normal_map(height_map:Image, bump_scale:float, path:String)->void:
 			nmap.decompress()
 	else:
 		nmap = gpuNormals.get_image()
-	# Save with error checking
-	#var save_err := img.save_png(normal_path)
-	#if save_err != OK:
-		#push_error("Failed to save normal map: %s" % normal_path)
-		#return
-#
-	#print("Normal map generated:", normal_path)
+
 	
 #=======================================================================================
 # get AABB and Occluder
+# here is the confusing part that needs to be refactored ...
+#
 #=======================================================================================
 func generate_mesh_data(rect: Rect2,data:Dictionary) -> Dictionary:
 	var subdiv_size = resolution + 1
@@ -546,21 +411,14 @@ func generate_mesh_data(rect: Rect2,data:Dictionary) -> Dictionary:
 	var collision_shape : CollisionShape3D  = CollisionShape3D.new()
 	collision_shape.name = "CollisionShape3D"
 	static_body.add_child(collision_shape)
-	#var xmax = _get_num_verts_along_edge_total(collision_shape_resolution)
-	#var scale_xz = (terrain_xz_scale / (_get_num_verts_along_chunk_edge(collision_shape_resolution) - 1))
+
 	collision_shape.scale = Vector3(scale_xz, scale_xz, scale_xz)
 	
-
-
-	# This was causing lag on level spawn but it got fixed randomly at some point? Maybe 4.2.1 bump?
 	collision_shape.shape = ConcavePolygonShape3D.new()
 	collision_shape.shape.set_faces(collision_data)
 		
 	if Engine.is_editor_hint():
 		collision_shape.owner = get_tree().edited_scene_root
-	
-
-
 
 	return {
 				"h_min":h_min,
@@ -764,7 +622,7 @@ func _ready() -> void:
 	
 	
 	var grid_coords = world_coords_to_grid_coords(player.global_position.x, player.global_position.z)
-	self.flatten_grid_pattern_at_point(grid_coords)
+	self.flatten_grid_pattern_at_point(grid_coords, false)
 	#for i in grid_size:
 		#for j in grid_size:
 			##grid[i][j].storage[0].aabb = AABB(Vector3(0.0, 100000, 0.0), Vector3(cell_size, 1000, cell_size))
@@ -798,7 +656,9 @@ func _process(delta: float) -> void:
 		moved = true
 		
 	if moved:
-		self.flatten_grid_pattern_at_point(grid_coords)
+		# generate collision chunks near the player ... the current chunk should already
+		# be generated and the player shouldn't have time to run faster than the thread
+		self.flatten_grid_pattern_at_point(grid_coords,true)
 
 
 
