@@ -201,7 +201,7 @@ func create_collision()->void:
 		# but we scan the heightmap twice at the moment
 	data_mesh_grid = get_mesh_vertices_and_indices(plane__128.mesh)
 		
-	var grid_size = xmax / cell_size
+	grid_size = xmax / cell_size
 	for i in range(grid_size):
 		for j in range(grid_size):
 			WorkerThreadPool.add_task(func():thread_create_occluders(i,j,data_mesh_grid))
@@ -210,29 +210,25 @@ func thread_create_colliders(i:int, j:int, data:Dictionary):
 	var rect:Rect2
 	rect.position = Vector2(float(i)*cell_size,float(j)*cell_size)
 	rect.size = Vector2(cell_size, cell_size)	
-	thread_generate_mesh(rect, data, false)		
+	thread_generate(rect, data, false)		
 				
 func thread_create_occluders(i:int, j:int, data:Dictionary):
 	var rect:Rect2
 	rect.position = Vector2(float(i)*cell_size,float(j)*cell_size)
 	rect.size = Vector2(cell_size, cell_size)	
-	thread_generate_mesh(rect, data, true)					
+	thread_generate(rect, data, true)					
 				
 
 
 
 	
 #=======================================================================================
-# heightmap accessor functions
+# heightmap accessor functions and Images
 #=======================================================================================
 func load_image()->void:
 	hmap = LoadLargeHeightMap("res://assets/Heightmaps/ISLAND_4k_2/height2.exr")
 	#self.HEIGHT_SCALE/xmax
 	create_normal_map(hmap, self.HEIGHT_SCALE, "res://assets/Heightmaps/ISLAND_4k_2/normal_map.png")
-	
-
-	
-	#gpuSplat = load("res://assets/Heightmaps/ISLAND_4k_2/splat.png")
 	
 	splat_map = gpuSplat.get_image()
 	if splat_map.is_compressed():
@@ -287,6 +283,7 @@ func get_altitude(pos:Vector3)->float:
 		print("error no heightmap")
 		return 0.0
 			
+			
 # bump scale is HEIGHT_SCALE
 func create_normal_map(height_map:Image, bump_scale:float, path:String)->void:
 	
@@ -310,9 +307,7 @@ func create_normal_map(height_map:Image, bump_scale:float, path:String)->void:
 			return
 
 		print("Normal map generated:", path)	
-		
-		
-	
+
 		# cancel the run and reload, the normal map should work now ... just
 		# a weird problem in that i can't get the nmap 
 
@@ -320,130 +315,34 @@ func create_normal_map(height_map:Image, bump_scale:float, path:String)->void:
 			nmap.decompress()
 	else:
 		nmap = gpuNormals.get_image()
+		
+		
 
-	
-#=======================================================================================
-# get AABB and Occluder
-# here is the confusing part that needs to be refactored ...
-#
-#=======================================================================================
-func generate_mesh_data(rect: Rect2,data:Dictionary) -> Dictionary:
-	var subdiv_size = resolution + 1
-	var step_size = rect.size.x / resolution
-	
-	# Step 1: Generate Base Height Data
-	#height_data.resize(subdiv_size * subdiv_size)
-	
-	var rect2 = rect
-	rect2.size.x +=1
-	rect2.size.y +=1
-	
-
-	var h_min = 100000	
-	var h_max = -100000	
-
-				
-	var collision_data := PackedVector3Array()
-	collision_data.resize(data["indices"].size())
-	for i in data["indices"].size()-3:	
-		var i1 = data["indices"][i]
-		var i2 = data["indices"][i+1]
-		var i3 = data["indices"][i+2]
-		
-		var v1 = Vector3(data["vertices"][i1])
-		var v2 = Vector3(data["vertices"][i2])
-		var v3 = Vector3(data["vertices"][i3])
-		
-		
-		var pos_x1 = rect.position.x + v1.x
-		var pos_z1 = rect.position.y + v1.z
-		v1.y = get_altitude(Vector3(pos_x1, 0, pos_z1))
-
-		if v1.y < h_min:
-			h_min = v1.y
-		if v1.y > h_max:
-			h_max = v1.y
-						
-		var pos_x2 = rect.position.x + v2.x
-		var pos_z2 = rect.position.y + v2.z
-		v2.y = get_altitude(Vector3(pos_x2, 0, pos_z2))
-
-		
-		if v2.y  < h_min:
-			h_min = v2.y 
-		if v2.y  > h_max:
-			h_max = v2.y 		
-		
-		var pos_x3 = rect.position.x + v3.x
-		var pos_z3 = rect.position.y + v3.z
-		var h3:float = get_altitude(Vector3(pos_x3, 0, pos_z3))
-
-		v3.y = h3 
-				
-		if v3.y < h_min:
-			h_min = v3.y
-		if v3.y > h_max:
-			h_max = v3.y	
-					
-		collision_data.append( v1)
-		collision_data.append( v2)
-		collision_data.append( v3 )
-		
-		i+=3
-		
-		
-		
-	for i in collision_data.size():
-		var v:Vector3 = collision_data[i]
-		var dict1 = get_map_values(v.x, v.z, rect.position.x, rect.position.y )
-		var vNorm :Vector3 = dict1['normal']
-		var H :float = dict1['height']
-		v +=  5.0 * vNorm * H - 2.5 * vNorm 		
-		collision_data[i] = v	
-		
-	var static_body : StaticBody3D = StaticBody3D.new()
-	static_body.name = "StaticBody3D_"+var_to_str(rect.position.x/cell_size)+"_"+var_to_str(rect.position.y/cell_size)
-
-	call_deferred("add_child",static_body)
-	static_body.connect("tree_entered", Callable(self, "_on_tree_entered").bind(static_body,Vector3(rect.position.x, 0.0, rect.position.y)))
-	
-	#if Engine.is_editor_hint():
-	static_body.owner = get_tree().edited_scene_root
-		
-	var collision_shape : CollisionShape3D  = CollisionShape3D.new()
-	collision_shape.name = "CollisionShape3D"
-	static_body.add_child(collision_shape)
-
-	collision_shape.scale = Vector3(scale_xz, scale_xz, scale_xz)
-	
-	collision_shape.shape = ConcavePolygonShape3D.new()
-	collision_shape.shape.set_faces(collision_data)
-		
-	#if Engine.is_editor_hint():
-	collision_shape.owner = get_tree().edited_scene_root
-
-	return {
-				"h_min":h_min,
-				"h_max":h_max
-			}
-	
-func get_map_values(x:float, z:float, X:int, Z:int):
+func get_map_values( x:float, z:float, X:int, Z:int):
 	var normal_pix:Color = nmap.get_pixel((X+x),(Z+z))
-	var normal = Vector3(normal_pix.r, normal_pix.g, normal_pix.b )
+	var normal = Vector3(normal_pix.r, normal_pix.g, normal_pix.b ).normalized()
 	var splat:Color = splat_map.get_pixel( (X+x),(Z+z) )
+	x += X
+	z += Z
 		
-	var m_uv1 := Vector2i(512.0*Vector2( (x*UV_SCALE.x / resolution) - floor(x*UV_SCALE.x / resolution),
-						 	  (z*UV_SCALE.x/ resolution) - floor(z *UV_SCALE.x/resolution)))
-	var m_uv2 := Vector2i(512.0*Vector2( (x*UV_SCALE.y / resolution) - floor(x*UV_SCALE.y / resolution),
-							  (z*UV_SCALE.y/ resolution) - floor(z *UV_SCALE.y/ resolution)))	
-	var m_uv3 := Vector2i(512.0*Vector2( (x*UV_SCALE.z / resolution) - floor(x*UV_SCALE.z / resolution),
-						 	  (z*UV_SCALE.z/ resolution) - floor(z *UV_SCALE.z/ resolution)))	
-	var m_uv4 := Vector2i(512.0*Vector2( (x*UV_SCALE.w / resolution) - floor(x*UV_SCALE.w / resolution),
-							  (z*UV_SCALE.w/ resolution) - floor(z *UV_SCALE.w/ resolution)))	
-												
-	var disp1 = alb1.get_pixelv( m_uv1 ).a				
-	var disp2 = alb2.get_pixelv( m_uv2 ).a			
-	var disp3 = alb3.get_pixelv( m_uv3 ).a
+	var u1 = 	int( 512.0 * ( (x * UV_SCALE.x)/ cell_size  - floor((x * UV_SCALE.x)/ cell_size ))) 
+	var v1 = 	int( 512.0 * ( (z * UV_SCALE.x)/ cell_size  - floor((z * UV_SCALE.x)/ cell_size ))) 
+	var m_uv1 := Vector2i( u1,v1 )
+	var disp1 = alb1.get_pixelv( m_uv1 ).a	
+
+	var u2 = 	int( 512.0 * ( (x * UV_SCALE.y)/ cell_size  - floor((x * UV_SCALE.y)/ cell_size ))) 
+	var v2 = 	int( 512.0 * ( (z * UV_SCALE.y)/ cell_size  - floor((z * UV_SCALE.y)/ cell_size ))) 
+	var m_uv2:= Vector2i( u2,v2 )
+	var disp2 = alb2.get_pixelv( m_uv2 ).a	
+	
+	var u3 = 	int( 512.0 * ( (x * UV_SCALE.z)/ cell_size  - floor((x * UV_SCALE.z)/ cell_size ))) 
+	var v3 = 	int( 512.0 * ( (z * UV_SCALE.z)/ cell_size  - floor((z * UV_SCALE.z)/ cell_size ))) 
+	var m_uv3 := Vector2i( u3,v3 )
+	var disp3 = alb3.get_pixelv( m_uv3 ).a	
+
+	var u4 = 	int( 512.0 * ( (x * UV_SCALE.w)/ cell_size  - floor((x * UV_SCALE.w)/ cell_size ))) 
+	var v4 = 	int( 512.0 * ( (z * UV_SCALE.w)/ cell_size  - floor((z * UV_SCALE.w)/ cell_size ))) 
+	var m_uv4:= Vector2i( u4,v4 )
 	var disp4 = alb4.get_pixelv( m_uv4 ).a	
 		
 	var hval:float = (splat.g* disp1 +(1.0 -splat.g) * disp3)			
@@ -452,6 +351,110 @@ func get_map_values(x:float, z:float, X:int, Z:int):
 		"normal":normal,
 		"height":hval
 	}
+
+
+#=======================================================================================
+# Thread function
+#=======================================================================================	
+func thread_generate(rect: Rect2, data:Dictionary, gen_occluders:bool)->void:
+	
+	if gen_occluders:
+		
+		finalize_node( rect, generate_occluders(rect,data) )
+	else:	
+		var mesh_data = generate_mesh_data(rect,data)
+		var array_mesh = ArrayMesh.new()
+		array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, mesh_data)
+		#
+		var st = SurfaceTool.new()
+		st.create_from(array_mesh, 0)
+		st.generate_normals()
+		var final_mesh = st.commit() # This is now ready for the GPU
+		finalize_node_collision(rect, final_mesh ) 
+		
+		
+#=======================================================================================
+# Colliosion Mesh
+#=======================================================================================	
+# regression to Quadtree terain mesh helper functions
+func generate_mesh_data(rect: Rect2,data:Dictionary) -> Array:
+
+	var SIZE = (2.0*resolution) + 1
+	var step_size = rect.size.x / resolution
+	
+	# Step 1: Generate Base Height Data
+	var height_data = PackedFloat32Array()
+	height_data.resize(SIZE * SIZE)
+
+	
+	#var h_region = hmap.get_region(rect2)
+	#var texture:Texture2D = ImageTexture.create_from_image(h_region)
+	min_h = 100000	
+	max_h = -100000	
+
+	var vertices = PackedVector3Array()
+	var uvs = PackedVector2Array()
+	var indices = PackedInt32Array()
+	
+	vertices.resize(SIZE * SIZE)
+	uvs.resize(SIZE * SIZE)
+
+	for z in SIZE:
+		for x in SIZE:
+			var pos_x = rect.position.x + (x/2.0 )
+			var pos_z = rect.position.y + (z/2.0 )
+			var h:float = get_altitude(Vector3(pos_x, 0, pos_z))
+			if h < min_h:
+				min_h = h
+			if h > max_h:
+				max_h = h
+			var i = x + z * SIZE
+	
+			vertices[i] = Vector3(x/2.0, h, z/2.0)
+			uvs[i] = Vector2( (rect.position.x+float(x)) / (resolution), (rect.position.y+float(z)) / (resolution))
+			var disp_dict = get_map_values(x/2.0,z/2.0,rect.position.x, rect.position.y)
+			vertices[i] += 5.0 * disp_dict["normal"] * disp_dict["height"] - 2.5 * disp_dict["normal"]
+
+
+	# Indices logic
+	for z in SIZE-1:
+		for x in SIZE-1:
+			var i = x + z * SIZE
+			indices.append(i)
+			indices.append(i + 1)
+			indices.append(i + SIZE)
+			indices.append(i + 1)
+			indices.append(i + SIZE + 1)
+			indices.append(i + SIZE)
+	
+	var arrays = []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	arrays[Mesh.ARRAY_INDEX] = indices
+	
+	return arrays	
+
+	
+func finalize_node_collision(rect: Rect2, final_mesh: Mesh) ->void:
+
+	var mesh_instance = MeshInstance3D.new()
+	mesh_instance.mesh = final_mesh
+	
+	#add the mesh to the scene
+	add_child.call_deferred(mesh_instance)
+	mesh_instance.create_trimesh_collision.call_deferred()	
+	mesh_instance.visible = false
+	
+	mesh_instance.connect("tree_entered", Callable(self, 
+				"_on_tree_entered").bind( mesh_instance,
+										Vector3(rect.position.x, 
+												0.0, 
+												rect.position.y)))
+	
+func _on_tree_entered(node:Node3D,pos:Vector3):
+	node.global_position = pos
+	print( "added node " + node.name +" to tree at " + var_to_str(pos) )
 	
 #=======================================================================================
 # get AABB and Occluder
@@ -460,28 +463,16 @@ func generate_occluders(rect: Rect2,data:Dictionary) -> Dictionary:
 	var subdiv_size = resolution + 1
 	var step_size = rect.size.x / resolution
 	
-	# Step 1: Generate Base Height Data
-	#height_data.resize(subdiv_size * subdiv_size)
-	
-	var rect2 = rect
-	rect2.size.x +=1
-	rect2.size.y +=1
-	
-
 	var h_min = 100000	
 	var h_max = -100000	
 	
-	var h_data = []
-	for i in resolution:
-		h_data.append([])
-		
-	
+
 		
 	#texture.
 	for z in resolution:
 		for x in resolution:
-			var pos_x = rect.position.x + (x * step_size)
-			var pos_z = rect.position.y + (z * step_size)
+			var pos_x = rect.position.x + (x )
+			var pos_z = rect.position.y + (z )
 			var h:float = get_altitude(Vector3(pos_x, 0, pos_z))
 			if h < h_min:
 				h_min = h
@@ -495,22 +486,7 @@ func generate_occluders(rect: Rect2,data:Dictionary) -> Dictionary:
 				"h_max":h_max
 			}	
 	
-# no longer threaded
-func thread_generate_mesh(node: Rect2, data:Dictionary, gen_occluders:bool)->void:
-	# 1. Generate the raw data
-	
-	var mesh_data
-	if gen_occluders:
-		
-		finalize_node( node, generate_occluders(node,data) )
-	else:	
-		mesh_data = generate_mesh_data(node,data)
 
-	# Pass the completed mesh to the main thread
-	#call_deferred("finalize_node", node, mesh_data)	
-#	return finalize_node( node, mesh_data )
-
-# no real mesh here, just an AABB and an occluder
 func finalize_node(rect: Rect2, h_dict: Dictionary) ->void:
 	#pending_nodes = max(0, pending_nodes - 1)
 
@@ -522,11 +498,6 @@ func finalize_node(rect: Rect2, h_dict: Dictionary) ->void:
 	var aabb_pos:Vector3 = Vector3(0.0,h_dict["h_min"],0.0)
 	var aabb_size:Vector3 = Vector3(cell_size,h_dict["h_max"]-h_dict["h_min"],cell_size)
 	var aabb:AABB = AABB(aabb_pos, aabb_size)
-	
-	
-	var box = MeshInstance3D.new()
-	box.mesh = BoxMesh.new()
-	(box.mesh as BoxMesh).size =  Vector3(resolution, h_dict["h_min"], resolution)
 
 	var grid_x = int(rect.position.x / cell_size)
 	var grid_y = int(rect.position.y / cell_size)
@@ -543,31 +514,19 @@ func finalize_node(rect: Rect2, h_dict: Dictionary) ->void:
 										grid_y,
 										aabb))
 
-# Runs automatically when the node is added to the scene tree
-
-	#set_pos.call_deferred(occ,)	
-	#add_child(box)
-	#box.global_position = Vector3(node.position.x+resolution/2.0, h/2.0, node.position.y+resolution/2.0)	
-
-
-	
-
-func _on_tree_entered(node:Node3D,pos:Vector3):
-	node.global_position = pos
-	print( "added node " + node.name +" to tree at " + var_to_str(pos) )
-	
 func _on_tree_entered_occ(node:Node3D,pos:Vector3, i:int, j:int,aabb:AABB):
 	node.global_position = pos
 	print( "added node " + node.name +" to tree at " + var_to_str(pos) )
 	for ch in grid[i][j].storage[0].node.get_children():
 		(ch as MeshInstance3D).custom_aabb = aabb
 		
-func set_pos(occ,pos):
-	occ.global_position = pos
+
 
 var first_time:bool = true	
 
-
+#=======================================================================================
+# Shader
+#=======================================================================================
 func setup_shader()->void:
 	for ch in tiles_256.get_children():
 		
@@ -624,31 +583,11 @@ func _ready() -> void:
 	load_image()
 		
 	create_collision()
-	
-
-										
+							
 	setup_shader()			
-	
 	
 	var grid_coords = world_coords_to_grid_coords(player.global_position.x, player.global_position.z)
 	self.flatten_grid_pattern_at_point(grid_coords, false)
-	#for i in grid_size:
-		#for j in grid_size:
-			##grid[i][j].storage[0].aabb = AABB(Vector3(0.0, 100000, 0.0), Vector3(cell_size, 1000, cell_size))
-			##grid[i][j].storage[0].aabb.end.y = -100000
-			#var dup = tiles_256.duplicate()
-			#add_child(dup)
-			#dup.global_position = Vector3(float(i)*128.0, 0.0,float(j)*128.0)
-			#for ch in dup.get_children():
-#
-					#
-				#(ch as MeshInstance3D).custom_aabb = grid[i][j].storage[0].aabb
-				# compute the AABB size
-				#var aabb_size = grid[i][j].storage[0].aabb.end.y - grid[i][j].storage[0].aabb.position.y
-				#(ch as MeshInstance3D).custom_aabb.size.y = aabb_size 
-				#print("Custom: " + var_to_str((ch as MeshInstance3D).custom_aabb))
-				#print("Actual: " + var_to_str((ch as MeshInstance3D).get_aabb()))
-
 
 
 var tracked_x =10
@@ -671,4 +610,11 @@ func _process(delta: float) -> void:
 
 
 
-			
+
+
+
+	
+
+	
+
+	
