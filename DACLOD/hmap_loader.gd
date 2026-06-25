@@ -186,36 +186,36 @@ func get_mesh_vertices_and_indices(mesh: Mesh) -> Dictionary:
 	return result
 
 
-@onready var plane__128: MeshInstance3D = $tiles_256/Plane__128
+@onready var plane__128: MeshInstance3D = $tiles_256/Plane__256
 
 @export var player:CharacterBody3D
 
 var data_mesh_grid:Dictionary
 func create_collision()->void:
-	if not Engine.is_editor_hint() and first_time:
-		first_time = false
+	#if not Engine.is_editor_hint() and first_time:
+	first_time = false
 		# first call a function adapted from SimpleTerrain ...
 		# this could do all the work, including AABB's and occluders...
 		#create_collision_shape()
 		
 		# but we scan the heightmap twice at the moment
-		data_mesh_grid = get_mesh_vertices_and_indices(plane__128.mesh)
+	data_mesh_grid = get_mesh_vertices_and_indices(plane__128.mesh)
 		
-		var grid_size = xmax / resolution
-		for i in range(grid_size):
-			for j in range(grid_size):
-				WorkerThreadPool.add_task(func():thread_create_occluders(i,j,data_mesh_grid))
+	var grid_size = xmax / cell_size
+	for i in range(grid_size):
+		for j in range(grid_size):
+			WorkerThreadPool.add_task(func():thread_create_occluders(i,j,data_mesh_grid))
 				
 func thread_create_colliders(i:int, j:int, data:Dictionary):
 	var rect:Rect2
-	rect.position = Vector2(float(i)*128.0,float(j)*128.0)
-	rect.size = Vector2(resolution, resolution)	
+	rect.position = Vector2(float(i)*cell_size,float(j)*cell_size)
+	rect.size = Vector2(cell_size, cell_size)	
 	thread_generate_mesh(rect, data, false)		
 				
 func thread_create_occluders(i:int, j:int, data:Dictionary):
 	var rect:Rect2
-	rect.position = Vector2(float(i)*128.0,float(j)*128.0)
-	rect.size = Vector2(resolution, resolution)	
+	rect.position = Vector2(float(i)*cell_size,float(j)*cell_size)
+	rect.size = Vector2(cell_size, cell_size)	
 	thread_generate_mesh(rect, data, true)					
 				
 
@@ -394,9 +394,11 @@ func generate_mesh_data(rect: Rect2,data:Dictionary) -> Dictionary:
 		
 		
 	for i in collision_data.size():
-		var v = collision_data[i]
-		var dict1 = get_map_values(v.x, v.z)
-		v +=  5.0 * dict1["normal"] * dict1["height"] - 2.5 * dict1["normal"] 		
+		var v:Vector3 = collision_data[i]
+		var dict1 = get_map_values(v.x, v.z, rect.position.x, rect.position.y )
+		var vNorm :Vector3 = dict1['normal']
+		var H :float = dict1['height']
+		v +=  5.0 * vNorm * H - 2.5 * vNorm 		
 		collision_data[i] = v	
 		
 	var static_body : StaticBody3D = StaticBody3D.new()
@@ -405,8 +407,8 @@ func generate_mesh_data(rect: Rect2,data:Dictionary) -> Dictionary:
 	call_deferred("add_child",static_body)
 	static_body.connect("tree_entered", Callable(self, "_on_tree_entered").bind(static_body,Vector3(rect.position.x, 0.0, rect.position.y)))
 	
-	if Engine.is_editor_hint():
-		static_body.owner = get_tree().edited_scene_root
+	#if Engine.is_editor_hint():
+	static_body.owner = get_tree().edited_scene_root
 		
 	var collision_shape : CollisionShape3D  = CollisionShape3D.new()
 	collision_shape.name = "CollisionShape3D"
@@ -417,25 +419,32 @@ func generate_mesh_data(rect: Rect2,data:Dictionary) -> Dictionary:
 	collision_shape.shape = ConcavePolygonShape3D.new()
 	collision_shape.shape.set_faces(collision_data)
 		
-	if Engine.is_editor_hint():
-		collision_shape.owner = get_tree().edited_scene_root
+	#if Engine.is_editor_hint():
+	collision_shape.owner = get_tree().edited_scene_root
 
 	return {
 				"h_min":h_min,
 				"h_max":h_max
 			}
 	
-func get_map_values(x:float, z:float):
-	var normal_pix:Color = nmap.get_pixel(int(x),int(z))
+func get_map_values(x:float, z:float, X:int, Z:int):
+	var normal_pix:Color = nmap.get_pixel((X+x),(Z+z))
 	var normal = Vector3(normal_pix.r, normal_pix.g, normal_pix.b )
-	var splat:Color = splat_map.get_pixel( int(x),int(z) )
+	var splat:Color = splat_map.get_pixel( (X+x),(Z+z) )
 		
-	var m_uv =Vector2( (x / 128.0) - float(int(x / 128.0)),
-						 (z / 128.0) - float(int(z / 128.0)))
-	var disp1 = alb1.get_pixelv( m_uv*UV_SCALE.x ).a
-	var disp2 = alb2.get_pixelv( m_uv*UV_SCALE.y ).a
-	var disp3 = alb3.get_pixelv( m_uv*UV_SCALE.z ).a
-	var disp4 = alb4.get_pixelv( m_uv*UV_SCALE.w ).a	
+	var m_uv1 := Vector2i(512.0*Vector2( (x*UV_SCALE.x / resolution) - floor(x*UV_SCALE.x / resolution),
+						 	  (z*UV_SCALE.x/ resolution) - floor(z *UV_SCALE.x/resolution)))
+	var m_uv2 := Vector2i(512.0*Vector2( (x*UV_SCALE.y / resolution) - floor(x*UV_SCALE.y / resolution),
+							  (z*UV_SCALE.y/ resolution) - floor(z *UV_SCALE.y/ resolution)))	
+	var m_uv3 := Vector2i(512.0*Vector2( (x*UV_SCALE.z / resolution) - floor(x*UV_SCALE.z / resolution),
+						 	  (z*UV_SCALE.z/ resolution) - floor(z *UV_SCALE.z/ resolution)))	
+	var m_uv4 := Vector2i(512.0*Vector2( (x*UV_SCALE.w / resolution) - floor(x*UV_SCALE.w / resolution),
+							  (z*UV_SCALE.w/ resolution) - floor(z *UV_SCALE.w/ resolution)))	
+												
+	var disp1 = alb1.get_pixelv( m_uv1 ).a				
+	var disp2 = alb2.get_pixelv( m_uv2 ).a			
+	var disp3 = alb3.get_pixelv( m_uv3 ).a
+	var disp4 = alb4.get_pixelv( m_uv4 ).a	
 		
 	var hval:float = (splat.g* disp1 +(1.0 -splat.g) * disp3)			
 	
@@ -608,13 +617,13 @@ func _ready() -> void:
 			
 			var dup = tiles_256.duplicate()
 			add_child(dup)
-			dup.global_position = Vector3(float(i)*128.0, 0.0,float(j)*128.0)
+			dup.global_position = Vector3(float(i)*cell_size, 0.0,float(j)*cell_size)
 			grid[i][j].storage[0].node = dup
 				
-	if not Engine.is_editor_hint():
-		load_image()
+	#if not Engine.is_editor_hint():
+	load_image()
 		
-		create_collision()
+	create_collision()
 	
 
 										
