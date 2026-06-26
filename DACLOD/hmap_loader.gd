@@ -43,12 +43,12 @@ var min_h = 100000
 var max_h = -2000	
 
 var scale_xz = 1.0
-var HEIGHT_SCALE:float = 500.0
+@export var HEIGHT_SCALE:float = 500.0
 
 #var height_data = PackedFloat32Array()
 
 @export_tool_button("DONT CLICK THIS BUTTON")
-var make_collider = create_collision
+var make_collider = create_occluders
 
 
 
@@ -191,7 +191,7 @@ func get_mesh_vertices_and_indices(mesh: Mesh) -> Dictionary:
 @export var player:CharacterBody3D
 
 var data_mesh_grid:Dictionary
-func create_collision()->void:
+func create_occluders()->void:
 	#if not Engine.is_editor_hint() and first_time:
 	first_time = false
 		# first call a function adapted from SimpleTerrain ...
@@ -229,7 +229,8 @@ func load_image()->void:
 	hmap = LoadLargeHeightMap("res://assets/Heightmaps/ISLAND_4k_2/height2.exr")
 	#self.HEIGHT_SCALE/xmax
 	create_normal_map(hmap, self.HEIGHT_SCALE, "res://assets/Heightmaps/ISLAND_4k_2/normal_map.png")
-	
+	if hmap.is_compressed():
+		hmap.decompress()	
 	splat_map = gpuSplat.get_image()
 	if splat_map.is_compressed():
 		splat_map.decompress()
@@ -316,42 +317,53 @@ func create_normal_map(height_map:Image, bump_scale:float, path:String)->void:
 	else:
 		nmap = gpuNormals.get_image()
 		
-		
+
+@export var channel_for_splat:int
 
 func get_map_values( x:float, z:float, X:int, Z:int):
-	var normal_pix:Color = nmap.get_pixel((X+x),(Z+z))
+	var normal_pix:Color = nmap.get_pixel(X+int(x), Z+int(z))
 	var normal = Vector3(normal_pix.r, normal_pix.g, normal_pix.b ).normalized()
-	var splat:Color = splat_map.get_pixel( (X+x),(Z+z) )
-	x += X
-	z += Z
+	var splat:Color = splat_map.get_pixel( X+int(x), Z+int(z) )
+	#x += X
+	#z += Z
 		
-	var u1 = 	int( 512.0 * ( (x * UV_SCALE.x)/ cell_size  - floor((x * UV_SCALE.x)/ cell_size ))) 
-	var v1 = 	int( 512.0 * ( (z * UV_SCALE.x)/ cell_size  - floor((z * UV_SCALE.x)/ cell_size ))) 
+	var u1 = 	int( 512.0 * fposmod( (x * UV_SCALE.x)/ cell_size, 1.0  )) 
+	var v1 = 	int( 512.0 * fposmod( (z * UV_SCALE.x)/ cell_size, 1.0  )) 
 	var m_uv1 := Vector2i( u1,v1 )
 	var disp1 = alb1.get_pixelv( m_uv1 ).a	
 
-	var u2 = 	int( 512.0 * ( (x * UV_SCALE.y)/ cell_size  - floor((x * UV_SCALE.y)/ cell_size ))) 
-	var v2 = 	int( 512.0 * ( (z * UV_SCALE.y)/ cell_size  - floor((z * UV_SCALE.y)/ cell_size ))) 
+	var u2 = 	int( 512.0 * fposmod( (x * UV_SCALE.y)/ cell_size, 1.0  )) 
+	var v2 = 	int( 512.0 * fposmod( (z * UV_SCALE.y)/ cell_size, 1.0  )) 
 	var m_uv2:= Vector2i( u2,v2 )
 	var disp2 = alb2.get_pixelv( m_uv2 ).a	
 	
-	var u3 = 	int( 512.0 * ( (x * UV_SCALE.z)/ cell_size  - floor((x * UV_SCALE.z)/ cell_size ))) 
-	var v3 = 	int( 512.0 * ( (z * UV_SCALE.z)/ cell_size  - floor((z * UV_SCALE.z)/ cell_size ))) 
+	var u3 = 	int( 512.0 * fposmod( (x * UV_SCALE.z)/ cell_size, 1.0  )) 
+	var v3 = 	int( 512.0 * fposmod( (z * UV_SCALE.z)/ cell_size, 1.0  )) 
 	var m_uv3 := Vector2i( u3,v3 )
 	var disp3 = alb3.get_pixelv( m_uv3 ).a	
 
-	var u4 = 	int( 512.0 * ( (x * UV_SCALE.w)/ cell_size  - floor((x * UV_SCALE.w)/ cell_size ))) 
-	var v4 = 	int( 512.0 * ( (z * UV_SCALE.w)/ cell_size  - floor((z * UV_SCALE.w)/ cell_size ))) 
+	var u4 = 	int( 512.0 * fposmod( (x * UV_SCALE.w)/ cell_size, 1.0  )) 
+	var v4 = 	int( 512.0 * fposmod( (z * UV_SCALE.w)/ cell_size, 1.0  )) 
 	var m_uv4:= Vector2i( u4,v4 )
 	var disp4 = alb4.get_pixelv( m_uv4 ).a	
+	
+	var splat_pixel = get_splat_color(splat)	
 		
-	var hval:float = (splat.g* disp1 +(1.0 -splat.g) * disp3)			
+	var hval:float = (splat_pixel* disp1 +(1.0 -splat_pixel) * disp3)			
 	
 	return {
 		"normal":normal,
 		"height":hval
 	}
 
+func get_splat_color(splat)->float:
+	if channel_for_splat == 0:
+		return splat.r
+	if channel_for_splat == 1:
+		return splat.g
+	if channel_for_splat == 2:
+		return splat.b
+	return splat.a		
 
 #=======================================================================================
 # Thread function
@@ -365,12 +377,25 @@ func thread_generate(rect: Rect2, data:Dictionary, gen_occluders:bool)->void:
 		var mesh_data = generate_mesh_data(rect,data)
 		var array_mesh = ArrayMesh.new()
 		array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, mesh_data)
-		#
-		var st = SurfaceTool.new()
-		st.create_from(array_mesh, 0)
-		st.generate_normals()
-		var final_mesh = st.commit() # This is now ready for the GPU
-		finalize_node_collision(rect, final_mesh ) 
+		
+		var static_body:StaticBody3D = StaticBody3D.new()
+		var collision_shape := CollisionShape3D.new()
+		
+		var polygon_shape := ConcavePolygonShape3D.new()
+		polygon_shape.set_faces(array_mesh.get_faces())
+		
+		collision_shape.shape = polygon_shape
+		static_body.add_child(collision_shape)
+		
+		add_child.call_deferred(static_body)
+		
+		
+		
+		static_body.connect("tree_entered", Callable(self, 
+				"_on_tree_entered").bind( static_body,
+										Vector3(rect.position.x + 0.5, 
+												0.0, 
+												rect.position.y + 0.5)))
 		
 		
 #=======================================================================================
@@ -379,7 +404,7 @@ func thread_generate(rect: Rect2, data:Dictionary, gen_occluders:bool)->void:
 # regression to Quadtree terain mesh helper functions
 func generate_mesh_data(rect: Rect2,data:Dictionary) -> Array:
 
-	var SIZE = (2.0*resolution) + 1
+	var SIZE = (resolution) + 1
 	var step_size = rect.size.x / resolution
 	
 	# Step 1: Generate Base Height Data
@@ -401,8 +426,8 @@ func generate_mesh_data(rect: Rect2,data:Dictionary) -> Array:
 
 	for z in SIZE:
 		for x in SIZE:
-			var pos_x = rect.position.x + (x/2.0 )
-			var pos_z = rect.position.y + (z/2.0 )
+			var pos_x = rect.position.x + (x )  #(x/2.0 
+			var pos_z = rect.position.y + (z )
 			var h:float = get_altitude(Vector3(pos_x, 0, pos_z))
 			if h < min_h:
 				min_h = h
@@ -410,9 +435,9 @@ func generate_mesh_data(rect: Rect2,data:Dictionary) -> Array:
 				max_h = h
 			var i = x + z * SIZE
 	
-			vertices[i] = Vector3(x/2.0, h, z/2.0)
+			vertices[i] = Vector3(x, h, z)  #Vector3(x/2.0, h, z/2.0)
 			uvs[i] = Vector2( (rect.position.x+float(x)) / (resolution), (rect.position.y+float(z)) / (resolution))
-			var disp_dict = get_map_values(x/2.0,z/2.0,rect.position.x, rect.position.y)
+			var disp_dict = get_map_values(x,z,rect.position.x, rect.position.y)#x/2.0,z/2.0
 			vertices[i] += 5.0 * disp_dict["normal"] * disp_dict["height"] - 2.5 * disp_dict["normal"]
 
 
@@ -421,11 +446,18 @@ func generate_mesh_data(rect: Rect2,data:Dictionary) -> Array:
 		for x in SIZE-1:
 			var i = x + z * SIZE
 			indices.append(i)
-			indices.append(i + 1)
+			indices.append(i + SIZE + 1) 
 			indices.append(i + SIZE)
 			indices.append(i + 1)
-			indices.append(i + SIZE + 1)
-			indices.append(i + SIZE)
+			indices.append(i )
+			indices.append(i + SIZE+1)
+			
+			#indices.append(i)
+			#indices.append(i + 1) 
+			#indices.append(i + SIZE)
+			#indices.append(i + 1)
+			#indices.append(i + SIZE + 1)
+			#indices.append(i + SIZE)			
 	
 	var arrays = []
 	arrays.resize(Mesh.ARRAY_MAX)
@@ -436,21 +468,7 @@ func generate_mesh_data(rect: Rect2,data:Dictionary) -> Array:
 	return arrays	
 
 	
-func finalize_node_collision(rect: Rect2, final_mesh: Mesh) ->void:
 
-	var mesh_instance = MeshInstance3D.new()
-	mesh_instance.mesh = final_mesh
-	
-	#add the mesh to the scene
-	add_child.call_deferred(mesh_instance)
-	mesh_instance.create_trimesh_collision.call_deferred()	
-	mesh_instance.visible = false
-	
-	mesh_instance.connect("tree_entered", Callable(self, 
-				"_on_tree_entered").bind( mesh_instance,
-										Vector3(rect.position.x, 
-												0.0, 
-												rect.position.y)))
 	
 func _on_tree_entered(node:Node3D,pos:Vector3):
 	node.global_position = pos
@@ -533,7 +551,10 @@ func setup_shader()->void:
 		((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial)\
 				.set_shader_parameter("texture_height",self.height_map_texture)
 		((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial)\
-				.set_shader_parameter("uv_scale",UV_SCALE)				
+				.set_shader_parameter("uv_scale",UV_SCALE)	
+		((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial)\
+				.set_shader_parameter("channel_for_splat",channel_for_splat)			
+						
 				
 		((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial)\
 					.set_shader_parameter("HEIGHT_SCALE",HEIGHT_SCALE)
@@ -582,7 +603,7 @@ func _ready() -> void:
 	#if not Engine.is_editor_hint():
 	load_image()
 		
-	create_collision()
+	create_occluders()
 							
 	setup_shader()			
 	
@@ -590,8 +611,8 @@ func _ready() -> void:
 	self.flatten_grid_pattern_at_point(grid_coords, false)
 
 
-var tracked_x =10
-var tracked_z = 10
+var tracked_x =0
+var tracked_z =0
 
 func _process(delta: float) -> void:
 	var grid_coords = world_coords_to_grid_coords(player.global_position.x, player.global_position.z)
