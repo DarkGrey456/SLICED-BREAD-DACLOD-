@@ -1,0 +1,41 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://dfye66g1h3yaq"]
+
+[ext_resource type="Shader" uid="uid://dqs0gyqt3lw0x" path="res://vertex_displace_splat_normal.gdshader" id="1_i54ls"]
+[ext_resource type="Texture2D" uid="uid://duv3r3al1rd2f" path="res://assets/textures/prototype_slot1_albedo_bump.png" id="2_h7d3h"]
+[ext_resource type="Texture2D" uid="uid://0d1x1ky03nf0" path="res://assets/textures/rock023_alb_ht.png" id="2_tdviw"]
+[ext_resource type="Texture2D" uid="uid://d0wneqs640mrc" path="res://assets/textures/slot0_albedo_bump.png" id="3_htcdi"]
+[ext_resource type="Texture2D" uid="uid://bv12oixipstqf" path="res://assets/textures/prototype_slot1_normal_roughness.png" id="4_rqov8"]
+[ext_resource type="Texture2D" uid="uid://dtpmb3n8hopcl" path="res://assets/textures/prototype_slot3_albedo_bump.png" id="5_md6sw"]
+[ext_resource type="Texture2D" uid="uid://c0dvch1evaelx" path="res://assets/textures/slot0_normal_roughness.png" id="5_tdviw"]
+[ext_resource type="Texture2D" uid="uid://b4xtrmf4okrmy" path="res://assets/Heightmaps/ISLAND_4k_2/splat.png" id="6_md6sw"]
+[ext_resource type="Texture2D" uid="uid://c28k24wujdp5n" path="res://assets/textures/rock023_nrm_rgh.png" id="6_niepi"]
+[ext_resource type="Texture2D" uid="uid://dnwbmg41kby1i" path="res://assets/Heightmaps/ISLAND_4k_2/height2.exr" id="7_niepi"]
+[ext_resource type="Texture2D" uid="uid://cp1wfxow6cyil" path="res://assets/textures/prototype_slot3_normal_roughness.png" id="9_nk5qj"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_i54ls")
+shader_parameter/channel_for_splat = 0
+shader_parameter/uv_scale = Vector4(2.2, 4, 9, 2)
+shader_parameter/albedo = Color(1, 1, 1, 1)
+shader_parameter/splat_tex = ExtResource("6_md6sw")
+shader_parameter/texture_height = ExtResource("7_niepi")
+shader_parameter/albedo_texture_size = Vector2i(4096, 4096)
+shader_parameter/point_size = 0.10000000149012
+shader_parameter/roughness = 1.0
+shader_parameter/metallic_texture_channel = Vector4(1, 0, 0, 0)
+shader_parameter/specular = 0.5
+shader_parameter/metallic = 0.0
+shader_parameter/alb_h_1 = ExtResource("2_tdviw")
+shader_parameter/alb_h_2 = ExtResource("2_h7d3h")
+shader_parameter/alb_h_3 = ExtResource("3_htcdi")
+shader_parameter/alb_h_4 = ExtResource("5_md6sw")
+shader_parameter/norm_r_1 = ExtResource("6_niepi")
+shader_parameter/norm_r_2 = ExtResource("4_rqov8")
+shader_parameter/norm_r_3 = ExtResource("5_tdviw")
+shader_parameter/norm_r_4 = ExtResource("9_nk5qj")
+shader_parameter/HEIGHT_SCALE = 500.0
+shader_parameter/uv1_scale = Vector3(1, 1, 1)
+shader_parameter/uv1_offset = Vector3(0, 0, 0)
+shader_parameter/uv2_scale = Vector3(1, 1, 1)
+shader_parameter/uv2_offset = Vector3(0, 0, 0)

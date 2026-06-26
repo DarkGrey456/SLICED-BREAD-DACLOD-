@@ -2,22 +2,19 @@
 
 [ext_resource type="Shader" uid="uid://ceex5yhnq2bto" path="res://vertex_displace_world.gdshader" id="1_g770v"]
 [ext_resource type="Texture2D" uid="uid://duv3r3al1rd2f" path="res://assets/textures/prototype_slot1_albedo_bump.png" id="2_4hw7e"]
-[ext_resource type="Texture2D" uid="uid://c57mukns84ira" path="res://assets/textures/prototype_slot2_albedo_bump.png" id="3_ei842"]
 [ext_resource type="Texture2D" uid="uid://d0wneqs640mrc" path="res://assets/textures/slot0_albedo_bump.png" id="4_oaimc"]
-[ext_resource type="Texture2D" uid="uid://dtpmb3n8hopcl" path="res://assets/textures/prototype_slot3_albedo_bump.png" id="5_4hw7e"]
 [ext_resource type="Texture2D" uid="uid://bv12oixipstqf" path="res://assets/textures/prototype_slot1_normal_roughness.png" id="6_7he84"]
-[ext_resource type="Texture2D" uid="uid://tdng4s74plhf" path="res://assets/textures/prototype_slot2_normal_roughness.png" id="7_yy4es"]
 [ext_resource type="Texture2D" uid="uid://c0dvch1evaelx" path="res://assets/textures/slot0_normal_roughness.png" id="8_r8xt3"]
-[ext_resource type="Texture2D" uid="uid://cp1wfxow6cyil" path="res://assets/textures/prototype_slot3_normal_roughness.png" id="9_u7se6"]
 [ext_resource type="Texture2D" uid="uid://b4xtrmf4okrmy" path="res://assets/Heightmaps/ISLAND_4k_2/splat.png" id="10_4hw7e"]
 [ext_resource type="Texture2D" uid="uid://dnwbmg41kby1i" path="res://assets/Heightmaps/ISLAND_4k_2/height2.exr" id="11_u7se6"]
 
 [resource]
 render_priority = 0
 shader = ExtResource("1_g770v")
-shader_parameter/uv_scale = Vector4(4, 4, 4, 2)
+shader_parameter/channel_for_splat = 1
+shader_parameter/uv_scale = Vector4(4, 4, 8, 2)
 shader_parameter/albedo = Color(1, 1, 1, 1)
-shader_parameter/texture_albedo = ExtResource("10_4hw7e")
+shader_parameter/splat_tex = ExtResource("10_4hw7e")
 shader_parameter/texture_height = ExtResource("11_u7se6")
 shader_parameter/albedo_texture_size = Vector2i(4096, 4096)
 shader_parameter/point_size = 0.10000000149012
@@ -26,13 +23,9 @@ shader_parameter/metallic_texture_channel = Vector4(1, 0, 0, 0)
 shader_parameter/specular = 0.5
 shader_parameter/metallic = 0.0
 shader_parameter/alb_h_1 = ExtResource("2_4hw7e")
-shader_parameter/alb_h_2 = ExtResource("3_ei842")
 shader_parameter/alb_h_3 = ExtResource("4_oaimc")
-shader_parameter/alb_h_4 = ExtResource("5_4hw7e")
 shader_parameter/norm_r_1 = ExtResource("6_7he84")
-shader_parameter/norm_r_2 = ExtResource("7_yy4es")
 shader_parameter/norm_r_3 = ExtResource("8_r8xt3")
-shader_parameter/norm_r_4 = ExtResource("9_u7se6")
 shader_parameter/HEIGHT_SCALE = 500.0
 shader_parameter/uv1_scale = Vector3(1, 1, 1)
 shader_parameter/uv1_offset = Vector3(0, 0, 0)

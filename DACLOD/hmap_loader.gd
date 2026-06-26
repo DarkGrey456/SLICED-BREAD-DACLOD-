@@ -55,7 +55,7 @@ var make_collider = create_occluders
 var x: float = 0
 var z: float = 0
 
-
+var TEXTURE_DIVISOR= 127
 
 
 
@@ -79,18 +79,17 @@ class Elem:
 	var mesh:MeshInstance3D
 	var node:Node3D
 	var collider_active = false
+	
 
 class grid_elem:
 	var storage = []
+	var colliders = []
 	
 var grid_pattern = [[Vector2i(-1,-1),Vector2i(-1,0),Vector2i(-1,1)],\
 					[Vector2i(0,-1),Vector2i(0,0),Vector2i(0,1)],\
 					[Vector2i(1,-1),Vector2i(1,0),Vector2i(1,1)]]
 	
-var point_positions = [ Vector2(1.2,1.5), Vector2(54.4, 1.5), Vector2(12.2,16.8),Vector2(36.0, 36.0),\
-						Vector2(1.2,9.5), Vector2(53.4, 9.5), Vector2(12.2,24.8),Vector2(36.0, 42.0),\
-						Vector2(1.2,17.5), Vector2(53.4, 17.5), Vector2(12.2,32.8),Vector2(36.0, 50.0),\
-						Vector2(1.2,25.5), Vector2(53.4, 25.5), Vector2(12.2,40.8),Vector2(36.0, 58.0)]
+
 var cuurent_point : int = 0
 
 func setup_grid(N:int)->void:
@@ -122,7 +121,7 @@ func activate_grid_cell(ii:int, jj:int)->void:
 		add_child(p)
 			
 #world_coords_to_grid_coords(player.x, player.z)
-func flatten_grid_pattern_at_point(p:Vector2i, b_threaded:bool)->void:
+func flatten_grid_pattern_at_point(p:Vector2i, tracked_grid_nodes: Array, b_threaded:bool)->void:
 	for i in range(0,3):
 		for j in range(0,3):
 
@@ -132,18 +131,67 @@ func flatten_grid_pattern_at_point(p:Vector2i, b_threaded:bool)->void:
 					#activate_grid_cell(px,py)
 				if grid[px][py].storage[0].collider_active == false:
 					grid[px][py].storage[0].collider_active = true
+					tracked_grid_nodes.append(Vector2i(px,py))
 					if b_threaded:
-						WorkerThreadPool.add_task(func():thread_create_colliders(px,py,data_mesh_grid))
+						for k in range(0,2):
+							for l in range(0,2):
+								var rect:Rect2
+								rect.position = Vector2(float(px)*cell_size + float(k)*cell_size/2.0 , 
+														float(py)*cell_size + float(l)*cell_size/2.0  )
+								rect.size = Vector2(cell_size/2.0, cell_size/2.0)	
+								WorkerThreadPool.add_task(func():thread_create_colliders(rect))
 					else:
 						#else don't thread
-						thread_create_colliders(px,py,data_mesh_grid)
+						for k in range(2):
+							for l in range(2):
+								var rect:Rect2
+								rect.position = Vector2(float(px)*cell_size + float(k)*cell_size/2.0 , 
+														float(py)*cell_size + float(l)*cell_size/2.0  )
+								rect.size = Vector2(cell_size/2.0, cell_size/2.0)							
+								thread_create_colliders(rect)
 
 				
 #=======================================================================================
 # Colliders
 #=======================================================================================
 
+func thread_create_colliders(rect:Rect2):
+	thread_generate(rect, false)		
+				
+func thread_create_occluders(rect:Rect2):
+	thread_generate(rect, true)
+	
+	
+var data_mesh_grid:Dictionary
+func create_occluders()->void:
+	#if not Engine.is_editor_hint() and first_time:
+	first_time = false
+		# first call a function adapted from SimpleTerrain ...
+		# this could do all the work, including AABB's and occluders...
+		#create_collision_shape()
+		
+		# but we scan the heightmap twice at the moment
+	data_mesh_grid = get_mesh_vertices_and_indices(plane__128.mesh)
+		
+	grid_size = xmax / cell_size
+	for i in range(grid_size):
+		for j in range(grid_size):
+			var rect:Rect2
+			rect.position = Vector2(float(i)*cell_size  , 
+									float(j)*cell_size   )
+			rect.size = Vector2(cell_size, cell_size)	
+			WorkerThreadPool.add_task(func():thread_create_occluders(rect),true)			
+			for k in range(2):
+				for l in range(2):
 
+					var rect2:Rect2
+					rect.position = Vector2(float(i)*cell_size + float(k)*cell_size/2.0 , 
+											float(j)*cell_size + float(l)*cell_size/2.0  )
+					rect.size = Vector2(cell_size/2.0, cell_size/2.0)	
+					WorkerThreadPool.add_task(func():thread_create_occluders(rect2),true)
+				
+						
+	
 	# Reads all vertices and indices from every surface of a Mesh
 func get_mesh_vertices_and_indices(mesh: Mesh) -> Dictionary:
 	var result := {
@@ -190,33 +238,7 @@ func get_mesh_vertices_and_indices(mesh: Mesh) -> Dictionary:
 
 @export var player:CharacterBody3D
 
-var data_mesh_grid:Dictionary
-func create_occluders()->void:
-	#if not Engine.is_editor_hint() and first_time:
-	first_time = false
-		# first call a function adapted from SimpleTerrain ...
-		# this could do all the work, including AABB's and occluders...
-		#create_collision_shape()
-		
-		# but we scan the heightmap twice at the moment
-	data_mesh_grid = get_mesh_vertices_and_indices(plane__128.mesh)
-		
-	grid_size = xmax / cell_size
-	for i in range(grid_size):
-		for j in range(grid_size):
-			WorkerThreadPool.add_task(func():thread_create_occluders(i,j,data_mesh_grid))
-				
-func thread_create_colliders(i:int, j:int, data:Dictionary):
-	var rect:Rect2
-	rect.position = Vector2(float(i)*cell_size,float(j)*cell_size)
-	rect.size = Vector2(cell_size, cell_size)	
-	thread_generate(rect, data, false)		
-				
-func thread_create_occluders(i:int, j:int, data:Dictionary):
-	var rect:Rect2
-	rect.position = Vector2(float(i)*cell_size,float(j)*cell_size)
-	rect.size = Vector2(cell_size, cell_size)	
-	thread_generate(rect, data, true)					
+
 				
 
 
@@ -326,24 +348,28 @@ func get_map_values( x:float, z:float, X:int, Z:int):
 	var splat:Color = splat_map.get_pixel( X+int(x), Z+int(z) )
 	#x += X
 	#z += Z
-		
-	var u1 = 	int( 512.0 * fposmod( (x * UV_SCALE.x)/ cell_size, 1.0  )) 
-	var v1 = 	int( 512.0 * fposmod( (z * UV_SCALE.x)/ cell_size, 1.0  )) 
+	 
+	# TEXTURE_DIVISOR is 127 here, 128-1, because x never reaches 128 for each tile, it goes 0-127
+	# BUT ... viewing with the collision mesh showed the results were bettwe when the shader
+	# had 128 as the divisor ... why ? I don't know, its still broken.
+	 
+	var u1 = 	int(512.0*(x * UV_SCALE.x/ TEXTURE_DIVISOR  - floor(x * UV_SCALE.x/ TEXTURE_DIVISOR  ) ))
+	var v1 = 	int(512.0*(z * UV_SCALE.x/ TEXTURE_DIVISOR  - floor(z * UV_SCALE.x/ TEXTURE_DIVISOR  ) ))
 	var m_uv1 := Vector2i( u1,v1 )
 	var disp1 = alb1.get_pixelv( m_uv1 ).a	
 
-	var u2 = 	int( 512.0 * fposmod( (x * UV_SCALE.y)/ cell_size, 1.0  )) 
-	var v2 = 	int( 512.0 * fposmod( (z * UV_SCALE.y)/ cell_size, 1.0  )) 
+	var u2 = 	int(512.0*(x * UV_SCALE.x/ TEXTURE_DIVISOR  - floor(x * UV_SCALE.x/ TEXTURE_DIVISOR  ) ))
+	var v2 = 	int(512.0*(z * UV_SCALE.x/ TEXTURE_DIVISOR  - floor(z * UV_SCALE.x/ TEXTURE_DIVISOR  ) ))
 	var m_uv2:= Vector2i( u2,v2 )
 	var disp2 = alb2.get_pixelv( m_uv2 ).a	
 	
-	var u3 = 	int( 512.0 * fposmod( (x * UV_SCALE.z)/ cell_size, 1.0  )) 
-	var v3 = 	int( 512.0 * fposmod( (z * UV_SCALE.z)/ cell_size, 1.0  )) 
+	var u3 = 	int(512.0*(x * UV_SCALE.z/ TEXTURE_DIVISOR  - floor(x * UV_SCALE.z/ TEXTURE_DIVISOR  ) ))
+	var v3 = 	int(512.0*(z * UV_SCALE.z/ TEXTURE_DIVISOR  - floor(z * UV_SCALE.z/ TEXTURE_DIVISOR  ) ))
 	var m_uv3 := Vector2i( u3,v3 )
 	var disp3 = alb3.get_pixelv( m_uv3 ).a	
 
-	var u4 = 	int( 512.0 * fposmod( (x * UV_SCALE.w)/ cell_size, 1.0  )) 
-	var v4 = 	int( 512.0 * fposmod( (z * UV_SCALE.w)/ cell_size, 1.0  )) 
+	var u4 = 	int( 512.0 * fposmod( (x * UV_SCALE.w)/ TEXTURE_DIVISOR, 1.0  )) 
+	var v4 = 	int( 512.0 * fposmod( (z * UV_SCALE.w)/ TEXTURE_DIVISOR, 1.0  )) 
 	var m_uv4:= Vector2i( u4,v4 )
 	var disp4 = alb4.get_pixelv( m_uv4 ).a	
 	
@@ -368,13 +394,15 @@ func get_splat_color(splat)->float:
 #=======================================================================================
 # Thread function
 #=======================================================================================	
-func thread_generate(rect: Rect2, data:Dictionary, gen_occluders:bool)->void:
+func thread_generate(rect: Rect2, gen_occluders:bool)->void:
 	
 	if gen_occluders:
-		
-		finalize_node( rect, generate_occluders(rect,data) )
+		if rect.size.x == resolution:
+			finalize_node( rect, generate_occluders(rect) )
+		else:
+			finalize_Occluders( rect, generate_occluders(rect) )
 	else:	
-		var mesh_data = generate_mesh_data(rect,data)
+		var mesh_data = generate_mesh_data(rect)
 		var array_mesh = ArrayMesh.new()
 		array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, mesh_data)
 		
@@ -402,18 +430,15 @@ func thread_generate(rect: Rect2, data:Dictionary, gen_occluders:bool)->void:
 # Colliosion Mesh
 #=======================================================================================	
 # regression to Quadtree terain mesh helper functions
-func generate_mesh_data(rect: Rect2,data:Dictionary) -> Array:
+func generate_mesh_data(rect: Rect2) -> Array:
 
-	var SIZE = (resolution) + 1
+	var SIZE = (resolution/2.0) + 1
 	var step_size = rect.size.x / resolution
 	
 	# Step 1: Generate Base Height Data
 	var height_data = PackedFloat32Array()
 	height_data.resize(SIZE * SIZE)
 
-	
-	#var h_region = hmap.get_region(rect2)
-	#var texture:Texture2D = ImageTexture.create_from_image(h_region)
 	min_h = 100000	
 	max_h = -100000	
 
@@ -472,12 +497,14 @@ func generate_mesh_data(rect: Rect2,data:Dictionary) -> Array:
 	
 func _on_tree_entered(node:Node3D,pos:Vector3):
 	node.global_position = pos
-	print( "added node " + node.name +" to tree at " + var_to_str(pos) )
+	var grid_coord=  world_coords_to_grid_coords(pos.x,pos.z)
+	grid[grid_coord.x][grid_coord.y].colliders.append(node)
+	#print( "added node " + node.name +" to tree at " + var_to_str(pos) )
 	
 #=======================================================================================
 # get AABB and Occluder
 #=======================================================================================
-func generate_occluders(rect: Rect2,data:Dictionary) -> Dictionary:
+func generate_occluders(rect: Rect2) -> Dictionary:
 	var subdiv_size = resolution + 1
 	var step_size = rect.size.x / resolution
 	
@@ -501,8 +528,21 @@ func generate_occluders(rect: Rect2,data:Dictionary) -> Dictionary:
 
 	return {
 				"h_min":h_min,
-				"h_max":h_max
+				"h_max":h_max,
+				
 			}	
+	
+func finalize_Occluders(rect: Rect2, h_dict: Dictionary) ->void:
+	var occ = OccluderInstance3D.new()
+	var box_occ = BoxOccluder3D.new()
+	box_occ.size = Vector3(cell_size, h_dict["h_min"], cell_size)
+	occ.occluder = box_occ	
+	call_deferred("add_child",occ)
+	occ.connect("tree_entered", Callable(self, 
+				"_on_tree_entered_occ_subdiv").bind( occ,
+										Vector3(rect.position.x+cell_size/2.0, 
+												h_dict["h_min"]/2.0, 
+												rect.position.y+cell_size/2.0)))	
 	
 
 func finalize_node(rect: Rect2, h_dict: Dictionary) ->void:
@@ -534,11 +574,13 @@ func finalize_node(rect: Rect2, h_dict: Dictionary) ->void:
 
 func _on_tree_entered_occ(node:Node3D,pos:Vector3, i:int, j:int,aabb:AABB):
 	node.global_position = pos
-	print( "added node " + node.name +" to tree at " + var_to_str(pos) )
 	for ch in grid[i][j].storage[0].node.get_children():
 		(ch as MeshInstance3D).custom_aabb = aabb
 		
-
+func _on_tree_entered_occ_subdiv(node:Node3D,pos:Vector3):
+	node.global_position = pos
+	
+		
 
 var first_time:bool = true	
 
@@ -561,7 +603,7 @@ func setup_shader()->void:
 		((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial)\
 					.set_shader_parameter("normal_map",gpuNormals)
 		((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial)\
-					.set_shader_parameter("texture_albedo",gpuSplat)	
+					.set_shader_parameter("splat_tex",gpuSplat)	
 					
 		((ch as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial)\
 					.set_shader_parameter("alb_h_1",alb_h_1)
@@ -608,11 +650,12 @@ func _ready() -> void:
 	setup_shader()			
 	
 	var grid_coords = world_coords_to_grid_coords(player.global_position.x, player.global_position.z)
-	self.flatten_grid_pattern_at_point(grid_coords, false)
+	self.flatten_grid_pattern_at_point(grid_coords, tracked_grid_nodes,false)
 
 
 var tracked_x =0
 var tracked_z =0
+var tracked_grid_nodes :Array[Vector2i]= []
 
 func _process(delta: float) -> void:
 	var grid_coords = world_coords_to_grid_coords(player.global_position.x, player.global_position.z)
@@ -624,10 +667,36 @@ func _process(delta: float) -> void:
 		tracked_z = grid_coords.y
 		moved = true
 		
+	
+		
 	if moved:
+		
+		# this is supposed to track what grid nodes have generated
+		# collisions and free the out of range ones
+		#for i in range(0,3):
+			#for j in range(0,3):
+#
+				#var px = grid_pattern[i][j].x +grid_coords.x
+				#var py = grid_pattern[i][j].y +grid_coords.y
+				#if px >= 0 and px < grid_size and py >= 0 and py < grid_size :
+						##activate_grid_cell(px,py)
+				##	if grid[px][py].storage[0].collider_active == false:
+					#var node_found = false
+					#for k in tracked_grid_nodes.size():
+						#if ((tracked_grid_nodes[k].x == px) 
+							#and (tracked_grid_nodes[k].y == py)):
+							#node_found = true
+								#
+					#if not node_found:
+						#for col in grid [ px ][ py ].colliders:
+							#col.queue_free()
+						#grid [ px ][ py ].colliders.clear()
+						#grid [ px ][ py ].storage[0].collider_active = false
+							 		
+		tracked_grid_nodes.clear()			
 		# generate collision chunks near the player ... the current chunk should already
 		# be generated and the player shouldn't have time to run faster than the thread
-		self.flatten_grid_pattern_at_point(grid_coords,true)
+		self.flatten_grid_pattern_at_point(grid_coords,tracked_grid_nodes,true)
 
 
 
