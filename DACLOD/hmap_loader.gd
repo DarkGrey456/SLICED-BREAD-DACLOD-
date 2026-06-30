@@ -133,22 +133,29 @@ func flatten_grid_pattern_at_point(p:Vector2i, tracked_grid_nodes: Array, b_thre
 					grid[px][py].storage[0].collider_active = true
 					tracked_grid_nodes.append(Vector2i(px,py))
 					if b_threaded:
-						for k in range(0,2):
-							for l in range(0,2):
-								var rect:Rect2
-								rect.position = Vector2(float(px)*cell_size + float(k)*cell_size/2.0 , 
-														float(py)*cell_size + float(l)*cell_size/2.0  )
-								rect.size = Vector2(cell_size/2.0, cell_size/2.0)	
-								WorkerThreadPool.add_task(func():thread_create_colliders(rect))
+						#for k in range(0,2):
+							#for l in range(0,2):
+		
+						var rect:Rect2
+						rect.position = Vector2(float(px)*cell_size  , 
+												float(py)*cell_size  )						
+						#rect.position = Vector2(float(px)*cell_size + float(k)*cell_size/2.0 , 
+												#float(py)*cell_size + float(l)*cell_size/2.0  )
+						rect.size = Vector2(cell_size, cell_size)	
+						#rect.size = Vector2(cell_size/2.0, cell_size/2.0)	
+						WorkerThreadPool.add_task(func():thread_create_colliders(rect))
 					else:
 						#else don't thread
-						for k in range(2):
-							for l in range(2):
-								var rect:Rect2
-								rect.position = Vector2(float(px)*cell_size + float(k)*cell_size/2.0 , 
-														float(py)*cell_size + float(l)*cell_size/2.0  )
-								rect.size = Vector2(cell_size/2.0, cell_size/2.0)							
-								thread_create_colliders(rect)
+						#for k in range(2):
+							#for l in range(2):
+
+						var rect:Rect2
+						#rect.position = Vector2(float(px)*cell_size + float(k)*cell_size/2.0 , 
+												#float(py)*cell_size + float(l)*cell_size/2.0  )
+						rect.position = Vector2(float(px)*cell_size  , 
+												float(py)*cell_size  )												
+						rect.size = Vector2(cell_size, cell_size)							
+						thread_create_colliders(rect)
 
 				
 #=======================================================================================
@@ -181,14 +188,14 @@ func create_occluders()->void:
 									float(j)*cell_size   )
 			rect.size = Vector2(cell_size, cell_size)	
 			WorkerThreadPool.add_task(func():thread_create_occluders(rect),true)			
-			for k in range(2):
-				for l in range(2):
-
-					var rect2:Rect2
-					rect.position = Vector2(float(i)*cell_size + float(k)*cell_size/2.0 , 
-											float(j)*cell_size + float(l)*cell_size/2.0  )
-					rect.size = Vector2(cell_size/2.0, cell_size/2.0)	
-					WorkerThreadPool.add_task(func():thread_create_occluders(rect2),true)
+			#for k in range(2):
+				#for l in range(2):
+#
+					#var rect2:Rect2
+					#rect.position = Vector2(float(i)*cell_size + float(k)*cell_size/2.0 , 
+											#float(j)*cell_size + float(l)*cell_size/2.0  )
+					#rect.size = Vector2(cell_size/2.0, cell_size/2.0)	
+					#WorkerThreadPool.add_task(func():thread_create_occluders(rect2),true)
 				
 						
 	
@@ -432,7 +439,7 @@ func thread_generate(rect: Rect2, gen_occluders:bool)->void:
 # regression to Quadtree terain mesh helper functions
 func generate_mesh_data(rect: Rect2) -> Array:
 
-	var SIZE = (resolution/2.0) + 1
+	var SIZE = (resolution) + 1
 	var step_size = rect.size.x / resolution
 	
 	# Step 1: Generate Base Height Data
