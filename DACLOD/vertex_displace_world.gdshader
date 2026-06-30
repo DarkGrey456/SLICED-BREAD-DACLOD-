@@ -87,11 +87,11 @@ float get_splat_color(vec4 color){
 
 void vertex() {
 	world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
-	UV = vec2(world_pos.xz/128.0) ;
+	UV = vec2(world_pos.xz/127.0) ;
 
 	
-	if (VERTEX.y > -1.0)
-		VERTEX.y =  HEIGHT_SCALE*texture(texture_height, vec2(world_pos.x/4096.0,world_pos.z/4096.0)).r;
+	//if (VERTEX.y > -1.0)
+	VERTEX.y +=  HEIGHT_SCALE*texture(texture_height, vec2(world_pos.x/4096.0,world_pos.z/4096.0)).r;
 	
 	vec3 norm = /*unpack_normal*/( texture(texture_normal, vec2(world_pos.x/4096.0,world_pos.z/4096.0))).rgb;	
 
@@ -102,17 +102,18 @@ void vertex() {
 	float h3 =texture(alb_h_3, UV*uv_scale.z).a; 
 	//float h4 =texture(alb_h_4, UV*uv_scale.w).a; 		
 	vec4 splat_map = texture(splat_tex, world_pos.xz/4096.0);
-	COLOR.r = splat_map.r;
-	COLOR.g = splat_map.g;
-	COLOR.b = splat_map.b;		
+		
 
 	vec3 view_dir = normalize(normalize(-VERTEX + EYE_OFFSET) * mat3(TANGENT, -BINORMAL , NORMAL));
-	float splat_color = get_splat_color(COLOR);
+	float splat_color = get_splat_color(splat_map);
 	float hval = (splat_color* h1 + (1.0-splat_color)* h3);
 
 	// this function ,must be the same as the function that generates the collisions
-	VERTEX +=  5.0 * hval * NORMAL - 2.5 * NORMAL;
-			
+	if (COLOR.g == 1.0)
+		VERTEX +=  5.0 * hval * NORMAL - 2.5 * NORMAL;
+	COLOR.r = splat_map.r;
+	COLOR.g = splat_map.g;
+	COLOR.b = splat_map.b;
 }
 
 
