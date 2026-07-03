@@ -252,14 +252,14 @@ func create_occluders()->void:
 
 				
 						
-	Vector3(cell_size, min_h, cell_size)
+	
 func create_box_mesh(pos:Vector3, size:Vector3)->MeshInstance3D:
-		var occluder_mesh: = MeshInstance3D.new()
-		var occluder_box_shape := BoxMesh.new()
-		occluder_box_shape.size =size 
-		occluder_mesh.mesh = occluder_box_shape
-		occluder_mesh.global_position = pos
-		return occluder_mesh
+	var occluder_mesh: = MeshInstance3D.new()
+	var occluder_box_shape := BoxMesh.new()
+	occluder_box_shape.size =size 
+	occluder_mesh.mesh = occluder_box_shape
+	occluder_mesh.global_position = pos
+	return occluder_mesh
 		
 	# Reads all vertices and indices from every surface of a Mesh
 func get_mesh_vertices_and_indices(mesh: Mesh) -> Dictionary:
