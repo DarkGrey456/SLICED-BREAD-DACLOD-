@@ -4,6 +4,7 @@ extends Node3D
 
 
 @onready var tiles_256: Node3D = $tiles_256
+@onready var compute_helper: Node3D = $"../ComputeHelper"
 
 
 #@onready var collision_shape_3d: CollisionShape3D = $"../StaticBody3D/CollisionShape3D"
@@ -180,6 +181,41 @@ func create_occluders()->void:
 		# but we scan the heightmap twice at the moment
 	data_mesh_grid = get_mesh_vertices_and_indices(plane__128.mesh)
 		
+	var computed_heights :PackedVector4Array= compute_helper.texture_fill3()
+	
+	for j in range(63):
+		for i in range(63):
+			var i1 = i + j*64
+			var i2 = (i+1) + j*64
+			var i3 = i + (j+1)*64
+			var i4 = (i+1) + (j+1)*64
+			
+			var v1 =[]
+			v1.append( computed_heights[i1] )
+			v1.append( computed_heights[i2] )
+			v1.append( computed_heights[i3] )
+			v1.append( computed_heights[i4] )
+			
+			var local_min_h = 10000.0
+			var local_max_h = 0.0
+			for vec in v1:
+				if vec.x < local_min_h:
+					local_min_h = vec.x
+				if vec.y > local_max_h:
+					local_max_h = vec.y
+			
+			var g_x = i / 2
+			var g_y = j / 2
+			
+			grid[ g_x ][ g_y ].storage[0].aabb = AABB( Vector3(	0.0, 
+															   	local_min_h, 
+																0.0),
+													   Vector3( cell_size,
+																local_max_h - local_min_h, 
+																cell_size) )
+			
+		j+=1
+	
 	grid_size = xmax / cell_size
 	for i in range(grid_size):
 		for j in range(grid_size):
@@ -187,7 +223,25 @@ func create_occluders()->void:
 			rect.position = Vector2(float(i)*cell_size  , 
 									float(j)*cell_size   )
 			rect.size = Vector2(cell_size, cell_size)	
-			WorkerThreadPool.add_task(func():thread_create_occluders(rect),true)			
+			
+			var min_h = grid[ i ][ j ].storage[0].aabb.position.y
+			
+			var occl := OccluderInstance3D.new()
+			var box_occl = BoxOccluder3D.new()
+			
+			box_occl.size = Vector3(cell_size, min_h, cell_size)
+			occl.occluder = box_occl			
+			
+			occl.global_position = Vector3(rect.position.x+cell_size/2.0, 
+										   min_h/2.0, 
+										   rect.position.y+cell_size/2.0)
+			
+			get_parent().add_child(occl)
+			
+			for ch in grid[i][j].storage[0].node.get_children():
+				(ch as MeshInstance3D).custom_aabb = grid[ i ][ j ].storage[0].aabb
+			
+			#WorkerThreadPool.add_task(func():thread_create_occluders(rect),true)			
 			#for k in range(2):
 				#for l in range(2):
 #
