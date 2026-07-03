@@ -237,22 +237,28 @@ func create_occluders()->void:
 			box_occl.size = Vector3(cell_size, min_h, cell_size)
 			occl.occluder = box_occl			
 
-			# I don't know why these haven't really shown up 
-			get_parent().add_child(occl)
-			occl.global_position = Vector3(rect.position.x+cell_size/2.0, 
-										   min_h/2.0, 
-										   rect.position.y+cell_size/2.0)
-													
-			
 
-			
+			get_parent().add_child.call_deferred(occl)
+			occl.connect("tree_entered", 
+						 Callable(self, 
+						 		  "_on_tree_entered_computed_occ")
+								  .bind( occl,
+										 Vector3(rect.position.x+cell_size/2.0, 
+												 min_h/2.0, 
+												 rect.position.y+cell_size/2.0)	))	
+
+													
 			for ch in grid[i][j].storage[0].node.get_children():
 				(ch as MeshInstance3D).custom_aabb = grid[ i ][ j ].storage[0].aabb
 
 
-				
+
+
+		
+func _on_tree_entered_computed_occ(node:Node3D,pos:Vector3):
+	node.global_position = pos				
 						
-	
+
 func create_box_mesh(pos:Vector3, size:Vector3)->MeshInstance3D:
 	var occluder_mesh: = MeshInstance3D.new()
 	var occluder_box_shape := BoxMesh.new()
@@ -260,6 +266,7 @@ func create_box_mesh(pos:Vector3, size:Vector3)->MeshInstance3D:
 	occluder_mesh.mesh = occluder_box_shape
 	occluder_mesh.global_position = pos
 	return occluder_mesh
+		
 		
 	# Reads all vertices and indices from every surface of a Mesh
 func get_mesh_vertices_and_indices(mesh: Mesh) -> Dictionary:
@@ -465,12 +472,8 @@ func get_splat_color(splat)->float:
 #=======================================================================================	
 func thread_generate(rect: Rect2, gen_occluders:bool)->void:
 	
-	if gen_occluders:
-		if rect.size.x == resolution:
-			finalize_node( rect, generate_occluders(rect) )
-		else:
-			finalize_Occluders( rect, generate_occluders(rect) )
-	else:	
+	if not gen_occluders:
+
 		var mesh_data = generate_mesh_data(rect)
 		var array_mesh = ArrayMesh.new()
 		array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, mesh_data)
@@ -573,81 +576,11 @@ func _on_tree_entered(node:Node3D,pos:Vector3):
 #=======================================================================================
 # get AABB and Occluder
 #=======================================================================================
-func generate_occluders(rect: Rect2) -> Dictionary:
-	var subdiv_size = resolution + 1
-	var step_size = rect.size.x / resolution
-	
-	var h_min = 100000	
-	var h_max = -100000	
+
 	
 
-		
-	#texture.
-	for z in resolution:
-		for x in resolution:
-			var pos_x = rect.position.x + (x )
-			var pos_z = rect.position.y + (z )
-			var h:float = get_altitude(Vector3(pos_x, 0, pos_z))
-			if h < h_min:
-				h_min = h
-			if h > h_max:
-				h_max = h
-			#height_data[x + z * subdiv_size] = h
-		#
-
-	return {
-				"h_min":h_min,
-				"h_max":h_max,
-				
-			}	
-	
-func finalize_Occluders(rect: Rect2, h_dict: Dictionary) ->void:
-	var occ = OccluderInstance3D.new()
-	var box_occ = BoxOccluder3D.new()
-	box_occ.size = Vector3(cell_size, h_dict["h_min"], cell_size)
-	occ.occluder = box_occ	
-	call_deferred("add_child",occ)
-	occ.connect("tree_entered", Callable(self, 
-				"_on_tree_entered_occ_subdiv").bind( occ,
-										Vector3(rect.position.x+cell_size/2.0, 
-												h_dict["h_min"]/2.0, 
-												rect.position.y+cell_size/2.0)))	
 	
 
-func finalize_node(rect: Rect2, h_dict: Dictionary) ->void:
-	#pending_nodes = max(0, pending_nodes - 1)
-
-	var occ = OccluderInstance3D.new()
-	var box_occ = BoxOccluder3D.new()
-	box_occ.size = Vector3(cell_size, h_dict["h_min"], cell_size)
-	occ.occluder = box_occ
-	
-	var aabb_pos:Vector3 = Vector3(0.0,h_dict["h_min"],0.0)
-	var aabb_size:Vector3 = Vector3(cell_size,h_dict["h_max"]-h_dict["h_min"],cell_size)
-	var aabb:AABB = AABB(aabb_pos, aabb_size)
-
-	var grid_x = int(rect.position.x / cell_size)
-	var grid_y = int(rect.position.y / cell_size)
-	
-	grid[ grid_x ][ grid_y ].storage[0].aabb = aabb
-	
-	call_deferred("add_child",occ)
-	occ.connect("tree_entered", Callable(self, 
-				"_on_tree_entered_occ").bind( occ,
-										Vector3(rect.position.x+cell_size/2.0, 
-												h_dict["h_min"]/2.0, 
-												rect.position.y+cell_size/2.0),
-										grid_x,
-										grid_y,
-										aabb))
-
-func _on_tree_entered_occ(node:Node3D,pos:Vector3, i:int, j:int,aabb:AABB):
-	node.global_position = pos
-	for ch in grid[i][j].storage[0].node.get_children():
-		(ch as MeshInstance3D).custom_aabb = aabb
-		
-func _on_tree_entered_occ_subdiv(node:Node3D,pos:Vector3):
-	node.global_position = pos
 	
 		
 
