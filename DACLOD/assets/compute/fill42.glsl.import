@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://dcvsim2to1ph8"
+path="res://.godot/imported/fill42.glsl-b639f5df4d29894ceddfd263777bf6b9.res"
+
+[deps]
+
+source_file="res://assets/compute/fill42.glsl"
+dest_files=["res://.godot/imported/fill42.glsl-b639f5df4d29894ceddfd263777bf6b9.res"]
+
+[params]
+
