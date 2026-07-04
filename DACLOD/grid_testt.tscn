@@ -12,6 +12,7 @@
 [ext_resource type="Texture2D" uid="uid://c0dvch1evaelx" path="res://assets/textures/slot0_normal_roughness.png" id="8_cp3p3"]
 [ext_resource type="Texture2D" uid="uid://cp1wfxow6cyil" path="res://assets/textures/prototype_slot3_normal_roughness.png" id="10_mu2dg"]
 [ext_resource type="Script" uid="uid://b2f43bouogqbd" path="res://compute_helper.gd" id="12_6qr5l"]
+[ext_resource type="Script" uid="uid://qyapyex6u2oh" path="res://label.gd" id="12_g6rvl"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kdqge"]
 
@@ -183,13 +184,10 @@ radiance_size = 2
 background_mode = 2
 sky = SubResource("Sky_5we6d")
 ambient_light_source = 3
-tonemap_mode = 4
-glow_enabled = true
 glow_intensity = 1.45
 glow_strength = 1.14
 glow_bloom = 0.28
 fog_density = 0.0005
-volumetric_fog_enabled = true
 volumetric_fog_density = 0.005
 
 [sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_6qr5l"]
@@ -254,6 +252,9 @@ visibility_range_end_margin = 4.0
 mesh = SubResource("ArrayMesh_ts6oo")
 surface_material_override/0 = ExtResource("2_nkh26")
 
+[node name="ComputeHelper" type="Node3D" parent="." unique_id=1178884514]
+script = ExtResource("12_6qr5l")
+
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1877521021]
 environment = SubResource("Environment_0rrkm")
 camera_attributes = SubResource("CameraAttributesPractical_6qr5l")
@@ -285,6 +286,4 @@ transform = Transform3D(1, -9.313226e-10, -7.450581e-09, -9.313226e-10, 1, -2.98
 [node name="Label" type="Label" parent="." unique_id=1325972817]
 offset_right = 40.0
 offset_bottom = 23.0
-
-[node name="ComputeHelper" type="Node3D" parent="." unique_id=1178884514]
-script = ExtResource("12_6qr5l")
+script = ExtResource("12_g6rvl")
