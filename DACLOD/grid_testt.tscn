@@ -13,6 +13,7 @@
 [ext_resource type="Texture2D" uid="uid://cp1wfxow6cyil" path="res://assets/textures/prototype_slot3_normal_roughness.png" id="10_mu2dg"]
 [ext_resource type="Script" uid="uid://b2f43bouogqbd" path="res://compute_helper.gd" id="12_6qr5l"]
 [ext_resource type="Script" uid="uid://qyapyex6u2oh" path="res://label.gd" id="12_g6rvl"]
+[ext_resource type="Script" uid="uid://c1syblpos3sfh" path="res://directional_light_3d.gd" id="12_mu2dg"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kdqge"]
 
@@ -260,12 +261,13 @@ environment = SubResource("Environment_0rrkm")
 camera_attributes = SubResource("CameraAttributesPractical_6qr5l")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment" unique_id=1629991465]
-transform = Transform3D(0.1673646, -0.15975246, 0.97286594, -0.56390804, 0.79391867, 0.22737837, -0.8087008, -0.58666205, 0.042788196, 0, 0, 0)
+transform = Transform3D(-0.41717964, -0.03723575, -0.90806085, -0.56420594, 0.79391485, 0.22665128, 0.7124836, 0.60688764, -0.35221368, 0, 0, 0)
 light_energy = 1.158
 shadow_enabled = true
 shadow_bias = 0.397
 shadow_normal_bias = 5.564
 directional_shadow_max_distance = 2000.0
+script = ExtResource("12_mu2dg")
 
 [node name="Player" type="CharacterBody3D" parent="." unique_id=60752118]
 transform = Transform3D(0.99948776, -1.3031837e-08, -0.032003827, 0.00960617, 0.95388997, 0.30000272, 0.030528128, -0.30015647, 0.9534013, 2040, 504, 2050)
