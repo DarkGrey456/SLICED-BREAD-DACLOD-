@@ -8,10 +8,10 @@
 [ext_resource type="Texture2D" uid="uid://b4xtrmf4okrmy" path="res://assets/Heightmaps/ISLAND_4k_2/splat.png" id="3_mu2dg"]
 [ext_resource type="Texture2D" uid="uid://d0wneqs640mrc" path="res://assets/textures/slot0_albedo_bump.png" id="4_g6rvl"]
 [ext_resource type="Texture2D" uid="uid://bv12oixipstqf" path="res://assets/textures/prototype_slot1_normal_roughness.png" id="6_788rj"]
-[ext_resource type="Texture2D" uid="uid://0d1x1ky03nf0" path="res://assets/textures/rock023_alb_ht.png" id="6_g6rvl"]
+[ext_resource type="Texture2D" uid="uid://dtpmb3n8hopcl" path="res://assets/textures/prototype_slot3_albedo_bump.png" id="6_g6rvl"]
 [ext_resource type="Texture2D" uid="uid://c0dvch1evaelx" path="res://assets/textures/slot0_normal_roughness.png" id="8_cp3p3"]
-[ext_resource type="Texture2D" uid="uid://c28k24wujdp5n" path="res://assets/textures/rock023_nrm_rgh.png" id="10_mu2dg"]
-[ext_resource type="Script" uid="uid://dwi33rcoik68o" path="res://label.gd" id="12_6qr5l"]
+[ext_resource type="Texture2D" uid="uid://cp1wfxow6cyil" path="res://assets/textures/prototype_slot3_normal_roughness.png" id="10_mu2dg"]
+[ext_resource type="Script" uid="uid://b2f43bouogqbd" path="res://compute_helper.gd" id="12_6qr5l"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kdqge"]
 
@@ -285,4 +285,6 @@ transform = Transform3D(1, -9.313226e-10, -7.450581e-09, -9.313226e-10, 1, -2.98
 [node name="Label" type="Label" parent="." unique_id=1325972817]
 offset_right = 40.0
 offset_bottom = 23.0
+
+[node name="ComputeHelper" type="Node3D" parent="." unique_id=1178884514]
 script = ExtResource("12_6qr5l")
