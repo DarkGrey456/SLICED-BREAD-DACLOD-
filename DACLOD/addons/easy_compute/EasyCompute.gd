@@ -267,7 +267,12 @@ func register_sampler(
 	# Create sampler state
 	var sampler_state = RDSamplerState.new()
 	#sampler_state.unnormalized_uvw = true
-
+	sampler_state.repeat_u = RenderingDevice.SAMPLER_REPEAT_MODE_REPEAT
+	sampler_state.repeat_v = RenderingDevice.SAMPLER_REPEAT_MODE_REPEAT
+	sampler_state.repeat_w =  RenderingDevice.SAMPLER_REPEAT_MODE_REPEAT
+	sampler_state.mip_filter = RenderingDevice.SAMPLER_FILTER_LINEAR
+	sampler_state.min_filter = RenderingDevice.SAMPLER_FILTER_LINEAR
+	sampler_state.mag_filter = RenderingDevice.SAMPLER_FILTER_LINEAR
 	# Create sampler
 	var sampler_rid = rd.sampler_create(sampler_state)
 
@@ -286,12 +291,12 @@ func register_sampler(
 	}
 
 	# Invalidate uniform set
-	for shd in shader_cache.values():
-		if shd["uniform_set"].is_valid():
-			rd.free_rid(shd["uniform_set"])
-			shd["uniform_set"] = RID()
+	#for shd in shader_cache.values():
+		#if shd["uniform_set"].is_valid():
+			#rd.free_rid(shd["uniform_set"])
+			#shd["uniform_set"] = RID()
 
-	return false
+	return true
 
 ## Removes any registered uniforms and buffers
 func unregister_uniform(uniform_name: String) -> bool:
@@ -406,6 +411,7 @@ func execute(shader_name: String, x_groups: int = 1, y_groups: int = 1, z_groups
 		)
 		uniform_set = rd.uniform_set_create(uniforms, shader, 0)
 		assert(uniform_set.is_valid(), "Failed to create uniform set")
+		#rd.log
 		shader_cache[shader_name]["uniform_set"] = uniform_set
 	
 	# Bind uniform set
