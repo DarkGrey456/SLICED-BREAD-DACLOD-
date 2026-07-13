@@ -20,9 +20,9 @@ uniform sampler2D texture_roughness : hint_roughness_r, filter_linear_mipmap, re
 uniform float specular : hint_range(0.0, 1.0, 0.01);
 uniform float metallic : hint_range(0.0, 1.0, 0.01);
 
-uniform sampler2D alb_h_1: source_color, filter_linear_mipmap, repeat_enable;
+uniform sampler2D alb_h_1: filter_linear_mipmap, repeat_enable;
 //uniform sampler2D alb_h_2: source_color, filter_linear_mipmap, repeat_enable;
-uniform sampler2D alb_h_3: source_color, filter_linear_mipmap, repeat_enable;
+uniform sampler2D alb_h_3:  filter_linear_mipmap, repeat_enable;
 //uniform sampler2D alb_h_4: source_color, filter_linear_mipmap, repeat_enable;
 
 uniform sampler2D norm_r_1: source_color, filter_linear_mipmap, repeat_enable;
@@ -158,7 +158,7 @@ void fragment() {
 	//float dp = dot(NORMAL, vec3(0.0,0.0,1.0));
 	
 	ROUGHNESS= 0.5*(n1.a * splat_color + n3.a * (1.0-splat_color)) ;
-	NORMAL_MAP = 0.5*(n1.rgb * splat_color  + n3.rgb * (1.0-splat_color ));
+	NORMAL_MAP = 0.5*(unpack_normal(n1) * splat_color  + unpack_normal(n3) * (1.0-splat_color ));
 	ALBEDO = 0.5*(alb1.rgb * splat_color  + alb3.rgb *(1.0-splat_color ));
 
 	/*}*/

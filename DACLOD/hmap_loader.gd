@@ -5,7 +5,7 @@ extends Node3D
 
 @onready var tiles_256: Node3D = $tiles_256
 @onready var compute_helper: Node3D = $"../ComputeHelper"
-
+@export var compute_shader_collision:bool = false
 
 #@onready var collision_shape_3d: CollisionShape3D = $"../StaticBody3D/CollisionShape3D"
 @export var height_map_name :String = "res://assets/Heightmaps/ISLAND_4k_2/height2.exr"
@@ -166,14 +166,14 @@ func flatten_grid_pattern_at_point(p:Vector2i, tracked_grid_nodes: Array, b_thre
 #=======================================================================================
 
 func thread_create_colliders(rect:Rect2):
-	thread_generate(rect)		
+	thread_generate(rect, compute_shader_collision)		
 				
 
 	
 	
 var data_mesh_grid:Dictionary
-var mesh_faces :PackedVector3Array
-var mesh_verts:PackedVector3Array
+var mesh_faces :PackedVector4Array
+var mesh_verts:PackedVector4Array
 
 func create_occluders()->void:
 	#if not Engine.is_editor_hint() and first_time:
@@ -181,33 +181,51 @@ func create_occluders()->void:
 		# first call a function adapted from SimpleTerrain ...
 		# this could do all the work, including AABB's and occluders...
 		#create_collision_shape()
-		
-		# but we scan the heightmap twice at the moment
-	#data_mesh_grid = get_mesh_vertices_and_indices(plane__128.mesh)
-	mesh_faces = get_mesh_faces(plane__128.mesh)["faces"]
-	mesh_verts = get_mesh_vertices(plane__128.mesh)["vertices"]
+
+	mesh_faces = get_mesh_faces(plane__128.mesh)
+	mesh_verts = get_mesh_vertices(plane__128.mesh)
 	print(sqrt(mesh_verts.size()))
-	#var vertex_image = Image.new()
-	#var n:float=sqrt(mesh_verts.size())
-	#vertex_image.resize(n,n)
-	#vertex_image.convert(Image.FORMAT_RGBAF)
-	#for i in mesh_verts.size():
-		#var v:Vector3 = mesh_verts[i]
-		#vertex_image.set_pixel(int(v.x), int(v.z), Color(v.x, v.y, v.z, 1.0))
-		
+
 	# Launch the compute shader kernal to quickly compute the AABB's 	
 	var computed_heights :PackedVector4Array= compute_helper.generate_AABB_and_occluders(hmap)
 	
 	#var grid_coord = world_coords_to_grid_coords(player.global_position.x, player.global_position.z)
-	#compute_helper.generate_physics_shape( hmap, 
-							#self.splat_map, 
-							#self.alb1, 
-							#self.alb3, 
-							#Vector2(float(grid_coord.x),float(grid_coord.y)),
-							#UV_SCALE,
-							#float(channel_for_splat),
-							#HEIGHT_SCALE,
-							#vertex_image)
+	if compute_shader_collision:
+		var verts_output :PackedVector4Array = compute_helper.generate_physics_shape( hmap, 
+							self.splat_map, 
+							self.alb1, 
+							self.alb3, 
+							Vector2(float(15.0),float(16.0)),
+							UV_SCALE,
+							float(channel_for_splat),
+							HEIGHT_SCALE,
+							mesh_verts)
+							
+		var mesh_data_output = mesh_verts_to_faces(plane__128.mesh, mesh_faces, verts_output)
+
+		
+	
+		var static_body:StaticBody3D = StaticBody3D.new()
+		var collision_shape := CollisionShape3D.new()
+		
+		var polygon_shape := ConcavePolygonShape3D.new()
+		polygon_shape.set_faces(mesh_data_output)
+		collision_shape.shape = polygon_shape
+		static_body.add_child(collision_shape)
+		#
+		add_child.call_deferred(static_body)
+
+		var rect:Rect2
+		rect.position = Vector2(float(15.0)*cell_size  , 
+						float(16.0)*cell_size  )						
+		rect.size = Vector2(cell_size, cell_size)			
+	
+		static_body.connect("tree_entered", Callable(self, 
+			"_on_tree_entered").bind( static_body,
+									Vector3(rect.position.x  , 
+											0.0, 
+											rect.position.y )))							
+							
 	for J in range(63):
 		if J % 2 == 0:
 			for I in range(63):
@@ -248,10 +266,10 @@ func create_occluders()->void:
 	grid_size = xmax / cell_size
 	for i in range(grid_size):
 		for j in range(grid_size):
-			var rect:Rect2
-			rect.position = Vector2(float(i)*cell_size  , 
+			var rect2:Rect2
+			rect2.position = Vector2(float(i)*cell_size  , 
 									float(j)*cell_size   )
-			rect.size = Vector2(cell_size, cell_size)	
+			rect2.size = Vector2(cell_size, cell_size)	
 			
 			var min_h = grid[ i ][ j ].storage[0].aabb.position.y
 			
@@ -266,9 +284,9 @@ func create_occluders()->void:
 						 Callable(self, 
 						 		  "_on_tree_entered_computed_occ")
 								  .bind( occl,
-										 Vector3(rect.position.x+cell_size/2.0 + 0.5, 
+										 Vector3(rect2.position.x+cell_size/2.0 + 0.5, 
 												 min_h/2.0, 
-												 rect.position.y+cell_size/2.0 + + 0.5)))	
+												 rect2.position.y+cell_size/2.0 + + 0.5)))	
 
 													
 			for ch in grid[i][j].storage[0].node.get_children():
@@ -290,10 +308,8 @@ func create_box_mesh(pos:Vector3, size:Vector3)->MeshInstance3D:
 	occluder_mesh.global_position = pos
 	return occluder_mesh
 		
-func get_mesh_faces(mesh:Mesh)->Dictionary:
-	var result := {
-		"faces": []
-	}	
+func get_mesh_faces(mesh:Mesh)->PackedVector4Array:
+	var faces:PackedVector4Array = PackedVector4Array()
 	var mdt := MeshDataTool.new()
 	
 	for surface in mesh.get_surface_count():
@@ -309,20 +325,53 @@ func get_mesh_faces(mesh:Mesh)->Dictionary:
 			var i2 := mdt.get_face_vertex(f, 1)
 			var i3 := mdt.get_face_vertex(f, 2)
 
-			result["faces"].append(mdt.get_vertex(i1))
-			result["faces"].append(mdt.get_vertex(i2))
-			result["faces"].append(mdt.get_vertex(i3))
+			var vec1 = mdt.get_vertex(i1)
+			var vec2 = mdt.get_vertex(i2)
+			var vec3 = mdt.get_vertex(i3)
+			
+			var v1 = Vector4(vec1.x,vec1.y,vec1.z,1.0)
+			var v2 = Vector4(vec2.x,vec2.y,vec2.z,1.0)
+			var v3 = Vector4(vec3.x,vec3.y,vec3.z,1.0)
+			faces.append(v1)
+			faces.append(v2)
+			faces.append(v3)
 
 		mdt.clear()	
 	
-	return result
+	return faces
+
+func mesh_verts_to_faces(mesh:Mesh,mesh_faces:PackedVector4Array,mesh_verts_disp:PackedVector4Array)->PackedVector3Array:
+	var faces:PackedVector3Array = PackedVector3Array()
+	var mdt := MeshDataTool.new()
 	
+	for surface in mesh.get_surface_count():
+		var err := mdt.create_from_surface(mesh, surface)
+		if err != OK:
+			print("Failed to read surface %d" % surface)
+			continue
+
+		# Extract indices (faces are always triangles)
+		var face_count := mdt.get_face_count()
+		for f in face_count:
+			var i1 := mdt.get_face_vertex(f, 0)
+			var i2 := mdt.get_face_vertex(f, 1)
+			var i3 := mdt.get_face_vertex(f, 2)
+
+			var v1 = mesh_verts_disp[i1]
+			var v2 = mesh_verts_disp[i2]
+			var v3 = mesh_verts_disp[i3]
+			
+
+			faces.append(Vector3(v1.x,v1.y,v1.z))
+			faces.append(Vector3(v2.x,v2.y,v2.z))
+			faces.append(Vector3(v3.x,v3.y,v3.z))
+
+
+	return faces	
 	
 	# Reads all vertices and indices from every surface of a Mesh
-func get_mesh_vertices(mesh: Mesh) -> Dictionary:
-	var result := {
-		"vertices": [],
-	}
+func get_mesh_vertices(mesh: Mesh) -> PackedVector4Array:
+	var result := PackedVector4Array()
 	if mesh == null:
 		push_error("Mesh is null.")
 		return result
@@ -340,7 +389,7 @@ func get_mesh_vertices(mesh: Mesh) -> Dictionary:
 		var vtx_count := mdt.get_vertex_count()
 		for i in vtx_count:
 			var vert := mdt.get_vertex(i)
-			result["vertices"].append(vert)
+			result.append(Vector4(vert.x, vert.y, vert.z, 1.0))
 			
 	return result	
 	
@@ -585,30 +634,73 @@ func get_splat_color(splat)->float:
 #=======================================================================================
 # Thread function
 #=======================================================================================	
-func thread_generate(rect: Rect2)->void:
-	
-	
+func thread_generate(rect: Rect2, use_compute:bool)->void:
+	if use_compute:
+		var verts_output :PackedVector4Array = compute_helper.generate_physics_shape_per_frame( hmap, 
+							self.splat_map, 
+							self.alb1, 
+							self.alb3, 
+							Vector2(rect.position.x/128.0,rect.position.y/128.0),
+							UV_SCALE,
+							float(channel_for_splat),
+							HEIGHT_SCALE,
+							mesh_verts)
+							
+		var mesh_data_output = mesh_verts_to_faces(plane__128.mesh, mesh_faces, verts_output)
 
-	var mesh_data = generate_mesh_data(rect)
-
-	var static_body:StaticBody3D = StaticBody3D.new()
-	var collision_shape := CollisionShape3D.new()
 		
-	var polygon_shape := ConcavePolygonShape3D.new()
-	polygon_shape.set_faces(mesh_data)
+	
+		var static_body:StaticBody3D = StaticBody3D.new()
+		var collision_shape := CollisionShape3D.new()
+		
+		var polygon_shape := ConcavePolygonShape3D.new()
+		polygon_shape.set_faces(mesh_data_output)
 
 	#create_physics_shape.call_deferred(mesh_data,
 									   #Vector3( rect.position.x , 
 												#0.0, 
 												#rect.position.y ))
-	collision_shape.shape = polygon_shape
-	static_body.add_child(collision_shape)
+		collision_shape.shape = polygon_shape
+		static_body.add_child(collision_shape)
 		#
-	add_child.call_deferred(static_body)
+		add_child.call_deferred(static_body)
 		#
 		#
 		#
-	static_body.connect("tree_entered", Callable(self, 
+	
+	#rect.position = Vector2(float(15.0)*cell_size  , 
+						#float(16.0)*cell_size  )						
+						##rect.position = Vector2(float(px)*cell_size + float(k)*cell_size/2.0 , 
+												##float(py)*cell_size + float(l)*cell_size/2.0  )	
+	#rect.size = Vector2(cell_size, cell_size)			
+	
+		static_body.connect("tree_entered", Callable(self, 
+			"_on_tree_entered").bind( static_body,
+									Vector3(rect.position.x  , 
+											0.0, 
+											rect.position.y )))							
+	else:						
+#
+		var mesh_data = generate_mesh_data(rect)
+
+		var static_body:StaticBody3D = StaticBody3D.new()
+		var collision_shape := CollisionShape3D.new()
+		
+		var polygon_shape := ConcavePolygonShape3D.new()
+		polygon_shape.set_faces(mesh_data)
+
+	#create_physics_shape.call_deferred(mesh_data,
+									   #Vector3( rect.position.x , 
+												#0.0, 
+												#rect.position.y ))
+		collision_shape.shape = polygon_shape
+		static_body.add_child(collision_shape)
+		#
+		add_child.call_deferred(static_body)
+		#
+		#
+		#
+		static_body.connect("tree_entered", Callable(self, 
 			"_on_tree_entered").bind( static_body,
 									Vector3(rect.position.x  , 
 											0.0, 
@@ -626,8 +718,9 @@ func generate_mesh_data(rect: Rect2) -> Array:
 	for v in mesh_faces:
 		v.y = get_altitude(Vector3(rect.position.x+v.x, 0, rect.position.y+v.z))
 		var disp_dict = get_map_values(v.x, v.z, rect.position.x, rect.position.y)#x/2.0,z/2.0
-		v += 5.0 * disp_dict["normal"] * disp_dict["height"]# - 2.5 * disp_dict["normal"]
-		mesh_faces_local.append(v)
+		var v1 =Vector3(v.x, v.y, v.z)
+		v1 += 5.0 * disp_dict["normal"] * disp_dict["height"]# - 2.5 * disp_dict["normal"]
+		mesh_faces_local.append(v1)
 		
 	return mesh_faces_local	
 
@@ -730,7 +823,7 @@ func _ready() -> void:
 	setup_shader()			
 	create_occluders()
 	var grid_coords = world_coords_to_grid_coords(player.global_position.x, player.global_position.z)
-	self.flatten_grid_pattern_at_point(grid_coords, tracked_grid_nodes,false)
+	#self.flatten_grid_pattern_at_point(grid_coords, tracked_grid_nodes,false)
 
 
 var tracked_x =0
@@ -776,7 +869,7 @@ func _process(delta: float) -> void:
 		tracked_grid_nodes.clear()			
 		# generate collision chunks near the player ... the current chunk should already
 		# be generated and the player shouldn't have time to run faster than the thread
-		self.flatten_grid_pattern_at_point(grid_coords,tracked_grid_nodes,true)
+		self.flatten_grid_pattern_at_point(grid_coords,tracked_grid_nodes, !compute_shader_collision )
 
 
 
