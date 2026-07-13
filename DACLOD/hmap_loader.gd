@@ -128,34 +128,29 @@ func flatten_grid_pattern_at_point(p:Vector2i, tracked_grid_nodes: Array, b_thre
 	for i in range(0,3):
 		for j in range(0,3):
 
-			var px = grid_pattern[i][j].x +p.x
-			var py = grid_pattern[i][j].y +p.y
+			var px = grid_pattern[ i ][ j ].x + p.x
+			var py = grid_pattern[ i ][ j ].y + p.y
+			
 			if px >= 0 and px < grid_size and py >= 0 and py < grid_size :
-					#activate_grid_cell(px,py)
-				if grid[px][py].storage[0].collider_active == false:
-					grid[px][py].storage[0].collider_active = true
-					tracked_grid_nodes.append(Vector2i(px,py))
+
+				if grid[ px ][ py ].storage[ 0 ].collider_active == false:
+					
+					grid[ px ][ py ].storage[ 0 ].collider_active = true
+					
+					tracked_grid_nodes.append( Vector2i(px, py) )
+					
 					if b_threaded:
-						#for k in range(0,2):
-							#for l in range(0,2):
-		
+								
 						var rect:Rect2
 						rect.position = Vector2(float(px)*cell_size  , 
 												float(py)*cell_size  )						
-						#rect.position = Vector2(float(px)*cell_size + float(k)*cell_size/2.0 , 
-												#float(py)*cell_size + float(l)*cell_size/2.0  )
+
 						rect.size = Vector2(cell_size, cell_size)	
-						#rect.size = Vector2(cell_size/2.0, cell_size/2.0)	
 						
 						WorkerThreadPool.add_task(func():thread_create_colliders(rect))
 					else:
-						#else don't thread
-						#for k in range(2):
-							#for l in range(2):
-
 						var rect:Rect2
-						#rect.position = Vector2(float(px)*cell_size + float(k)*cell_size/2.0 , 
-												#float(py)*cell_size + float(l)*cell_size/2.0  )
+
 						rect.position = Vector2(float(px)*cell_size  , 
 												float(py)*cell_size  )												
 						rect.size = Vector2(cell_size, cell_size)							
@@ -179,9 +174,6 @@ var mesh_verts:PackedVector4Array
 func create_occluders()->void:
 	#if not Engine.is_editor_hint() and first_time:
 	first_time = false
-		# first call a function adapted from SimpleTerrain ...
-		# this could do all the work, including AABB's and occluders...
-		#create_collision_shape()
 
 	mesh_faces = tiles.get_mesh_faces()
 	mesh_verts = tiles.get_mesh_vertices()
@@ -226,7 +218,12 @@ func create_occluders()->void:
 									Vector3(rect.position.x  , 
 											0.0, 
 											rect.position.y )))							
-							
+
+	# setup the AABB for the displaced terrain chunks
+	# the tiles came out of the compute shader in chunks of 64 x 64 
+	# so they are merged up into 128 x 128 sized chunks
+	# overall this process is very efficient compared to 
+	# computing all this in gdscript							
 	for J in range(63):
 		if J % 2 == 0:
 			for I in range(63):
@@ -263,19 +260,21 @@ func create_occluders()->void:
 																		cell_size) )
 			
 		
-	
+	# set the occlusion mesh for the terrain chunk	
 	grid_size = xmax / cell_size
 	for i in range(grid_size):
 		for j in range(grid_size):
 			var rect2:Rect2
 			rect2.position = Vector2(float(i)*cell_size  , 
-									float(j)*cell_size   )
+									 float(j)*cell_size   )
 			rect2.size = Vector2(cell_size, cell_size)	
 			
 			var min_h = grid[ i ][ j ].storage[0].aabb.position.y
 			
 			var occl := OccluderInstance3D.new()
 			var box_occl = BoxOccluder3D.new()
+			
+			# the height is the minimum coordinate of the chunk AABB
 			box_occl.size = Vector3(cell_size, min_h, cell_size)
 			occl.occluder = box_occl			
 
@@ -285,12 +284,13 @@ func create_occluders()->void:
 						 Callable(self, 
 						 		  "_on_tree_entered_computed_occ")
 								  .bind( occl,
+										# center the box
 										 Vector3(rect2.position.x+cell_size/2.0 + 0.5, 
 												 min_h/2.0, 
-												 rect2.position.y+cell_size/2.0 + + 0.5)))	
+												 rect2.position.y+cell_size/2.0 + 0.5)))	
 
-													
-			for ch in grid[i][j].storage[0].node.get_children():
+			# now finally set the AABB													
+			for ch in grid[ i ][ j ].storage[ 0 ].node.get_children():
 				(ch as MeshInstance3D).custom_aabb = grid[ i ][ j ].storage[0].aabb
 
 
@@ -311,17 +311,10 @@ func create_box_mesh(pos:Vector3, size:Vector3)->MeshInstance3D:
 		
 
 
-
-
-
 @export var player:CharacterBody3D
 
 
 				
-
-
-
-	
 #=======================================================================================
 # heightmap accessor functions and Images
 #=======================================================================================
@@ -331,6 +324,7 @@ func load_image()->void:
 	#var path = height_map_name
 	height_map_name = height_map_texture.resource_path
 		
+	# find the normal map or create
 	var last_slash = height_map_name.rfind("/")
 	var substr = height_map_name.substr(0,last_slash)
 	var normal_map_path = substr + "/normal_map.png"	
@@ -424,6 +418,8 @@ func create_normal_map(height_map:Image, bump_scale:float, path:String)->void:
 		nmap = gpuNormals.get_image()
 		
 
+# This is used by the threaded cpu script collision mesh generation model 
+# unfortunately this function is probably innaccurate
 func sample_image_bilnear_bump(image:Image,x:float, y:float, scale:float, divisor:float, size:float)->float:
 	
 	var u_1 = scale * x / divisor  
@@ -457,7 +453,6 @@ func sample_image_bilnear_bump(image:Image,x:float, y:float, scale:float, diviso
 
 func get_map_values( x:float, z:float, X:int, Z:int):
 	var normal_pix:Color = nmap.get_pixel(X+int(x), Z+int(z))
-	#var normal = Vector3(normal_pix.r, normal_pix.g, normal_pix.b ).normalized()
 	
 	var H1 = HEIGHT_SCALE*hmap.get_pixel(X + int(x-1), Z + int(z)).r
 	var H2 = HEIGHT_SCALE*hmap.get_pixel(X + int(x+1), Z + int(z)).r
@@ -512,6 +507,7 @@ func get_splat_color(splat)->float:
 # Thread function
 #=======================================================================================	
 func thread_generate(rect: Rect2, use_compute:bool)->void:
+	# if this is true then the process is not multi threaded
 	if use_compute:
 		var verts_output :PackedVector4Array = compute_helper.generate_physics_shape_per_frame( hmap, 
 							self.splat_map, 
@@ -544,12 +540,6 @@ func thread_generate(rect: Rect2, use_compute:bool)->void:
 		#
 		#
 		#
-	
-	#rect.position = Vector2(float(15.0)*cell_size  , 
-						#float(16.0)*cell_size  )						
-						##rect.position = Vector2(float(px)*cell_size + float(k)*cell_size/2.0 , 
-												##float(py)*cell_size + float(l)*cell_size/2.0  )	
-	#rect.size = Vector2(cell_size, cell_size)			
 	
 		static_body.connect("tree_entered", Callable(self, 
 			"_on_tree_entered").bind( static_body,
