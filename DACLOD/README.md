@@ -24,12 +24,12 @@ In project
 
 ## Current Issues
 
-* hard coded to specific image size, not tested on larger or alternative maps
-* collisions models are off target with both compute shader versions and gdscript versions
-* the compute shader collision model has missing strips not sure why
+* hard coded to specific image size, not tested on larger or alternative maps.
+* collisions models are occasionally slightly off target with compute shader collision generation.
+* compute shader collisions cause a frame rate drop when the collision mesh is added to the scene.
+* collision models are very off target with gdscript versions.
+
   
-
-
 ## Credits
 https://github.com/SpaghettiCodeMasterThe/Godot-Quadtree-Terrain
 
