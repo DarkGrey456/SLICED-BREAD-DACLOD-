@@ -10,6 +10,7 @@
 [ext_resource type="Texture2D" uid="uid://bv12oixipstqf" path="res://assets/textures/prototype_slot1_normal_roughness.png" id="6_788rj"]
 [ext_resource type="Texture2D" uid="uid://dtpmb3n8hopcl" path="res://assets/textures/prototype_slot3_albedo_bump.png" id="6_g6rvl"]
 [ext_resource type="Texture2D" uid="uid://c0dvch1evaelx" path="res://assets/textures/slot0_normal_roughness.png" id="8_cp3p3"]
+[ext_resource type="Script" uid="uid://djhy8ncwlg3a1" path="res://meshes.gd" id="10_788rj"]
 [ext_resource type="Texture2D" uid="uid://cp1wfxow6cyil" path="res://assets/textures/prototype_slot3_normal_roughness.png" id="10_mu2dg"]
 [ext_resource type="Script" uid="uid://b2f43bouogqbd" path="res://compute_helper.gd" id="12_6qr5l"]
 [ext_resource type="Script" uid="uid://qyapyex6u2oh" path="res://label.gd" id="12_g6rvl"]
@@ -251,12 +252,10 @@ sky = SubResource("Sky_5we6d")
 ambient_light_source = 3
 tonemap_mode = 4
 ssao_enabled = true
-glow_enabled = true
 glow_intensity = 1.45
 glow_strength = 1.14
 glow_bloom = 0.28
 fog_density = 0.0005
-volumetric_fog_enabled = true
 volumetric_fog_density = 0.005
 
 [sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_6qr5l"]
@@ -269,6 +268,7 @@ volumetric_fog_density = 0.005
 
 [node name="Node3D" type="Node3D" parent="." unique_id=1340837727 node_paths=PackedStringArray("player")]
 script = ExtResource("1_nkh26")
+compute_shader_collision = true
 height_map_texture = ExtResource("2_g6rvl")
 gpuSplat = ExtResource("3_mu2dg")
 alb_h_1 = ExtResource("2_t0lqd")
@@ -284,6 +284,7 @@ player = NodePath("../Player")
 channel_for_splat = 1
 
 [node name="tiles_256" type="Node3D" parent="Node3D" unique_id=2120847019]
+script = ExtResource("10_788rj")
 
 [node name="Plane_001" type="MeshInstance3D" parent="Node3D/tiles_256" unique_id=2083702603]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 0.5)

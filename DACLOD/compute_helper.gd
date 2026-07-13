@@ -153,7 +153,7 @@ func generate_physics_shape(height_map:Image,
 	
 	var mesh_byte_array:PackedByteArray = mesh_verts.to_byte_array()
 	compute.register_storage_buffer("source_verts", 10, mesh_byte_array.size(), mesh_byte_array)
-	
+	compute.register_storage_buffer("dest_verts", 15, mesh_byte_array.size(), [])
 	#var output_byte_array:PackedByteArray
 	#compute.register_storage_buffer("res_verts",12, mesh_byte_array.size(), [])
 	#compute.register_texture("output_verts", 12, 128, 128,[], RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT)
@@ -178,7 +178,7 @@ func generate_physics_shape(height_map:Image,
 	compute.execute("compute_height", mesh_verts.size()/128, 1, 1 )
 	compute.sync()
 	
-	var final_mesh_data = compute.fetch_buffer("source_verts")
+	var final_mesh_data = compute.fetch_buffer("dest_verts")
 	var float_data = final_mesh_data.to_vector4_array()
 	return float_data
 	#print(float_data)
@@ -208,6 +208,9 @@ func generate_physics_shape_per_frame(height_map:Image,
 	compute.execute("compute_height", mesh_verts.size()/128, 1, 1 )
 	compute.sync()
 	
-	var final_mesh_data = compute.fetch_buffer("source_verts")
+	var final_mesh_data = compute.fetch_buffer("dest_verts")
 	var float_data = final_mesh_data.to_vector4_array()
 	return float_data
+	
+
+	
