@@ -21,7 +21,9 @@ layout(set = 0, binding = 10) restrict buffer mesh_verts{
 	vec4 data[];
 }source_verts;
 
-
+layout(set = 0, binding = 15) restrict buffer result_mesh_verts{
+	vec4 data[];
+}dest_verts;
 
 
 
@@ -84,9 +86,9 @@ void main() {
 	float hval = (splat_color* h1 + (1.0-splat_color)* h3);
 		
 	VERTEX +=  5.0 * hval * NORMAL;
-	//VERTEX.x -= 0.5;
-	//VERTEX.z -= 0.5;
-	//vec4 output_vec = vec4( VERTEX.x, VERTEX.y, VERTEX.z, 1.0);
- 	source_verts.data[id] = VERTEX;// output_vec);		
+	VERTEX.x -= 0.5;
+	VERTEX.z -= 0.5;
+
+ 	dest_verts.data[id] = VERTEX;		
 	
 }
