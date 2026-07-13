@@ -134,8 +134,8 @@ func generate_physics_shape(height_map:Image,
 	tex1_image.convert(Image.FORMAT_RGBA8)
 	
 	var tex2_image = tex2.duplicate()
-	if tex2_image.is_compressed():
-		tex2_image.decompress()	
+	#if tex2_image.is_compressed():
+	#	tex2_image.decompress()	
 	if tex2_image.has_mipmaps():
 		tex2_image.clear_mipmaps()
 	tex2_image.convert(Image.FORMAT_RGBA8)	
