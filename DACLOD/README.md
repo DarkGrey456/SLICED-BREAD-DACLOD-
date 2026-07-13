@@ -10,6 +10,7 @@ This is a very fast terrain viewer
 ## Features
 * Load a 4k heightmap
 * Viewport dependant level of detail
+* occluders and AABB's for heightmap displacement meshes 
 * Collisions working
 * The images and the meshes are aligned to power of 2 levels, so all the grid chunks fit better into GPU memory
 
@@ -22,10 +23,12 @@ Not working, just run the demo scene if you want
 In project 
 
 ## Current Issues
-* weirdness of visible chunks when first loaded before player moves
-* the loading time is slow if collision is enabled (in the script)
+
 * hard coded to specific image size, not tested on larger or alternative maps
-* occluders don't seem to help
+* collisions models are off target with both compute shader versions and gdscript versions
+* the compute shader collision model has missing strips not sure why
+  
+
 
 ## Credits
 https://github.com/SpaghettiCodeMasterThe/Godot-Quadtree-Terrain
