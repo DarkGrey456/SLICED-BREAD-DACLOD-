@@ -205,7 +205,7 @@ func generate_physics_shape_per_frame(height_map:Image,
 	var my_data_bytes = my_data.to_byte_array()
 	compute.update_buffer("my_data", my_data_bytes )	
 		
-	compute.execute("compute_height", mesh_verts.size()/128, 1, 1 )
+	compute.execute("compute_height", ceil(float(mesh_verts.size())/128.0), 1, 1 )
 	compute.sync()
 	
 	var final_mesh_data = compute.fetch_buffer("dest_verts")
