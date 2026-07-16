@@ -175,7 +175,7 @@ func generate_physics_shape(height_map:Image,
 	var my_data_bytes = my_data.to_byte_array()
 	compute.register_uniform_buffer("my_data",9,my_data_bytes.size(),my_data_bytes )	
 	
-	compute.execute("compute_height", mesh_verts.size()/128, 1, 1 )
+	compute.execute("compute_height", ceil(float(mesh_verts.size())/128.0), 1, 1 )
 	compute.sync()
 	
 	var final_mesh_data = compute.fetch_buffer("dest_verts")
@@ -213,4 +213,16 @@ func generate_physics_shape_per_frame(height_map:Image,
 	return float_data
 	
 
+
+
+
+
+#func _on_data_ready(data: PackedByteArray) -> void:
+	#call_deferred("_create_collision", data)
+#
+#
+#func _create_collision(data: PackedByteArray) -> void:
+	## Decode the data and create the collision nodes here.
+	#parent_node.add_child(static_body)
+	#static_body.global_transform = target_transform
 	

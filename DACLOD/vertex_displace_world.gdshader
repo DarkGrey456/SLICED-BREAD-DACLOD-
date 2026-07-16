@@ -6,7 +6,7 @@ render_mode blend_mix, depth_draw_opaque, cull_back, specular_schlick_ggx;
 uniform int channel_for_splat = 1;
 uniform vec4 uv_scale = vec4(9.0,18.0, 9.0, 2.0);
 uniform vec4 albedo : source_color;
-uniform sampler2D splat_tex : source_color/*, filter_linear_mipmap*/, repeat_enable;
+uniform sampler2D splat_tex :  repeat_enable;
 uniform sampler2D texture_normal : source_color, repeat_enable;
 uniform sampler2D texture_height : source_color;//,filter_linear_mipmap;
 uniform ivec2 albedo_texture_size;
