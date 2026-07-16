@@ -123,16 +123,16 @@ void vertex() {
 	
 	if( COLOR.r == 1.0 && COLOR.g == 0.0 && COLOR.b == 0.0){
 		if (VERTEX.x < (0.0 + 0.25)  ){
-			VERTEX.y += (H0 + H1)/2.0; ;//  mix( H2, H3, 0.5) * HEIGHT_SCALE;
+			VERTEX.y += (H2 + H3)/2.0; ;//  mix( H2, H3, 0.5) * HEIGHT_SCALE;
 		}
 		if (VERTEX.x > 128.0-0.25){
-			VERTEX.y =(H0 + H1)/2.0;//mix( H2, H3, 0.5) * HEIGHT_SCALE;
+			VERTEX.y =(H2 + H3)/2.0;//mix( H2, H3, 0.5) * HEIGHT_SCALE;
 		}
 		if (VERTEX.z < (0.0 + 0.25)  ){
-			VERTEX.y = (H2 + H3)/2.0;//mix( H0, H1, 0.5) * HEIGHT_SCALE;
+			VERTEX.y = (H0 + H1)/2.0;//mix( H0, H1, 0.5) * HEIGHT_SCALE;
 		}
 		if (VERTEX.z > 128.0-0.25){
-			VERTEX.y = (H2 + H3)/2.0;//mix( H0, H1, 0.5) * HEIGHT_SCALE;
+			VERTEX.y = (H0 + H1)/2.0;//mix( H0, H1, 0.5) * HEIGHT_SCALE;
 		}		
 	}
 	else{
@@ -157,16 +157,16 @@ void vertex() {
 		float S3 = texture(splat_tex, vec2((world_pos.x)/4096.0,(world_pos.z+1.0)/4096.0)).g;		
 		float splat_col = 0.0;
 		if (VERTEX.x < (0.0 + 0.25)  ){
-			splat_col = (S0 + S1)/2.0; ;//  mix( H2, H3, 0.5) * HEIGHT_SCALE;
+			splat_col = (S2 + S3)/2.0; ;//  mix( H2, H3, 0.5) * HEIGHT_SCALE;
 		}
 		if (VERTEX.x > 128.0-0.25){
-			splat_col =(S0 + S1)/2.0;//mix( H2, H3, 0.5) * HEIGHT_SCALE;
+			splat_col =(S2 + S3)/2.0;//mix( H2, H3, 0.5) * HEIGHT_SCALE;
 		}
 		if (VERTEX.z < (0.0 + 0.25)  ){
-			splat_col = (S2 + S3)/2.0;//mix( H0, H1, 0.5) * HEIGHT_SCALE;
+			splat_col = (S0 + S1)/2.0;//mix( H0, H1, 0.5) * HEIGHT_SCALE;
 		}
 		if (VERTEX.z > 128.0-0.25){
-			 splat_col = (S2 + S3)/2.0;//mix( H0, H1, 0.5) * HEIGHT_SCALE;
+			 splat_col = (S0 + S1)/2.0;//mix( H0, H1, 0.5) * HEIGHT_SCALE;
 		}				
 			
 	float hval_snap = (splat_col* h1 + (1.0-splat_col)* h3);
