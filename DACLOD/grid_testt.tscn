@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://dnwbmg41kby1i" path="res://assets/Heightmaps/ISLAND_4k_2/height2.exr" id="2_g6rvl"]
 [ext_resource type="Texture2D" uid="uid://duv3r3al1rd2f" path="res://assets/textures/prototype_slot1_albedo_bump.png" id="2_t0lqd"]
 [ext_resource type="Script" uid="uid://bw4r5sufd8cuj" path="res://Player.gd" id="3_75cqa"]
-[ext_resource type="Texture2D" uid="uid://b4xtrmf4okrmy" path="res://assets/Heightmaps/ISLAND_4k_2/splat2.png" id="3_mu2dg"]
+[ext_resource type="Texture2D" uid="uid://cojaqwy46h6bb" path="res://assets/Heightmaps/ISLAND_4k_2/splat2.png" id="3_a8tqb"]
 [ext_resource type="Texture2D" uid="uid://d0wneqs640mrc" path="res://assets/textures/slot0_albedo_bump.png" id="4_g6rvl"]
 [ext_resource type="Texture2D" uid="uid://bv12oixipstqf" path="res://assets/textures/prototype_slot1_normal_roughness.png" id="6_788rj"]
 [ext_resource type="Texture2D" uid="uid://dtpmb3n8hopcl" path="res://assets/textures/prototype_slot3_albedo_bump.png" id="6_g6rvl"]
@@ -219,7 +219,7 @@ radiance_size = 2
 background_mode = 2
 sky = SubResource("Sky_5we6d")
 ambient_light_source = 3
-tonemap_mode = 2
+tonemap_mode = 4
 tonemap_agx_white = 11.42
 ssao_enabled = true
 glow_intensity = 1.45
@@ -240,7 +240,7 @@ volumetric_fog_density = 0.005
 script = ExtResource("1_nkh26")
 compute_shader_collision = true
 height_map_texture = ExtResource("2_g6rvl")
-gpuSplat = ExtResource("3_mu2dg")
+gpuSplat = ExtResource("3_a8tqb")
 alb_h_1 = ExtResource("2_t0lqd")
 alb_h_2 = ExtResource("6_g6rvl")
 alb_h_3 = ExtResource("4_g6rvl")
@@ -257,12 +257,14 @@ channel_for_splat = 1
 script = ExtResource("10_788rj")
 
 [node name="Plane_001" type="MeshInstance3D" parent="Node3D/tiles_256" unique_id=1295732036]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 0.5)
 visibility_range_begin = 2048.0
 visibility_range_begin_margin = 16.0
 mesh = SubResource("ArrayMesh_ogpnm")
 surface_material_override/0 = ExtResource("11_a8tqb")
 
 [node name="Plane_002" type="MeshInstance3D" parent="Node3D/tiles_256" unique_id=1672756171]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 0.5)
 visibility_range_begin = 1024.0
 visibility_range_begin_margin = 16.0
 visibility_range_end = 2048.0
@@ -271,6 +273,7 @@ mesh = SubResource("ArrayMesh_25mcg")
 surface_material_override/0 = ExtResource("11_a8tqb")
 
 [node name="Plane_003" type="MeshInstance3D" parent="Node3D/tiles_256" unique_id=2096537391]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 0.5)
 visibility_range_begin = 512.0
 visibility_range_begin_margin = 16.0
 visibility_range_end = 1024.0
@@ -279,6 +282,7 @@ mesh = SubResource("ArrayMesh_3q2xc")
 surface_material_override/0 = ExtResource("11_a8tqb")
 
 [node name="Plane_004" type="MeshInstance3D" parent="Node3D/tiles_256" unique_id=1082843281]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 0.5)
 visibility_range_begin = 256.0
 visibility_range_begin_margin = 16.0
 visibility_range_end = 512.0
@@ -287,6 +291,7 @@ mesh = SubResource("ArrayMesh_863n1")
 surface_material_override/0 = ExtResource("11_a8tqb")
 
 [node name="Plane_005" type="MeshInstance3D" parent="Node3D/tiles_256" unique_id=1453878963]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 0.5)
 visibility_range_begin = 128.0
 visibility_range_begin_margin = 16.0
 visibility_range_end = 256.0
@@ -295,6 +300,7 @@ mesh = SubResource("ArrayMesh_8yju7")
 surface_material_override/0 = ExtResource("11_a8tqb")
 
 [node name="Plane__128" type="MeshInstance3D" parent="Node3D/tiles_256" unique_id=260595319]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 0.5)
 visibility_range_end = 128.0
 visibility_range_end_margin = 16.0
 mesh = SubResource("ArrayMesh_7nqhe")
@@ -316,7 +322,7 @@ directional_shadow_max_distance = 2000.0
 script = ExtResource("12_mu2dg")
 
 [node name="Player" type="CharacterBody3D" parent="." unique_id=60752118]
-transform = Transform3D(0.99948776, -1.3031837e-08, -0.032003827, 0.00960617, 0.95388997, 0.30000272, 0.030528128, -0.30015647, 0.9534013, 2030, 504, 2070)
+transform = Transform3D(0.9994502, 0, -0.03315518, 0, 1, 0, 0.03315518, 0, 0.9994502, 2030, 504, 2070)
 script = ExtResource("3_75cqa")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Player" unique_id=572356236]

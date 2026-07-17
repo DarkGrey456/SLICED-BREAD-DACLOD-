@@ -1,22 +1,21 @@
 extends CharacterBody3D
+@onready var camera_3d: Camera3D = $SpringArm3D/Camera3D
+@export var SPEED = 10.0
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _process(delta: float) -> void:
 	velocity = Vector3.ZERO
-	if Input.is_action_pressed("pitch_down"):
-		velocity =  -global_basis.z *20.0
-	if Input.is_action_pressed("pitch_up"):
-		velocity = global_basis.z *20.0 		
 
 
-func _input(event):
-	if event is InputEventMouseMotion:
-		rotate_y(-event.relative.x * 0.005)
-		rotate_object_local(Vector3(1.0,0.0,0.0),-event.relative.y *0.005)
+
+
 
 func _physics_process(delta: float) -> void:
+	var input_dir := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	var direction := (camera_3d.global_transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+	velocity = direction * SPEED
 	if not is_on_floor():
 		velocity += get_gravity()
 	else:
