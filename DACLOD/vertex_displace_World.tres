@@ -1,20 +1,20 @@
 [gd_resource type="ShaderMaterial" format=3 uid="uid://cs4hqr707kbit"]
 
-[ext_resource type="Shader" uid="uid://ceex5yhnq2bto" path="res://vertex_displace_world.gdshader" id="1_g770v"]
+[ext_resource type="Shader" uid="uid://joklb7xh0vrc" path="res://vertex_displace_world_skirts_notriplanar.gdshader" id="1_i7cga"]
 [ext_resource type="Texture2D" uid="uid://duv3r3al1rd2f" path="res://assets/textures/prototype_slot1_albedo_bump.png" id="2_4hw7e"]
 [ext_resource type="Texture2D" uid="uid://d0wneqs640mrc" path="res://assets/textures/slot0_albedo_bump.png" id="4_oaimc"]
 [ext_resource type="Texture2D" uid="uid://bv12oixipstqf" path="res://assets/textures/prototype_slot1_normal_roughness.png" id="6_7he84"]
+[ext_resource type="Texture2D" uid="uid://cojaqwy46h6bb" path="res://assets/Heightmaps/ISLAND_4k_2/splat2.png" id="6_i7cga"]
 [ext_resource type="Texture2D" uid="uid://c0dvch1evaelx" path="res://assets/textures/slot0_normal_roughness.png" id="8_r8xt3"]
-[ext_resource type="Texture2D" uid="uid://b4xtrmf4okrmy" path="res://assets/Heightmaps/ISLAND_4k_2/splat.png" id="10_4hw7e"]
 [ext_resource type="Texture2D" uid="uid://dnwbmg41kby1i" path="res://assets/Heightmaps/ISLAND_4k_2/height2.exr" id="11_u7se6"]
 
 [resource]
 render_priority = 0
-shader = ExtResource("1_g770v")
+shader = ExtResource("1_i7cga")
 shader_parameter/channel_for_splat = 1
 shader_parameter/uv_scale = Vector4(4, 4, 8, 2)
 shader_parameter/albedo = Color(1, 1, 1, 1)
-shader_parameter/splat_tex = ExtResource("10_4hw7e")
+shader_parameter/splat_tex = ExtResource("6_i7cga")
 shader_parameter/texture_height = ExtResource("11_u7se6")
 shader_parameter/albedo_texture_size = Vector2i(4096, 4096)
 shader_parameter/point_size = 0.10000000149012
@@ -31,3 +31,6 @@ shader_parameter/uv1_scale = Vector3(1, 1, 1)
 shader_parameter/uv1_offset = Vector3(0, 0, 0)
 shader_parameter/uv2_scale = Vector3(1, 1, 1)
 shader_parameter/uv2_offset = Vector3(0, 0, 0)
+shader_parameter/lod = 2
+shader_parameter/grid_loc = Vector2(0, 0)
+shader_parameter/player_grid_loc = Vector2(0, 0)
