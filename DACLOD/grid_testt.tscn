@@ -4,17 +4,18 @@
 [ext_resource type="Texture2D" uid="uid://dnwbmg41kby1i" path="res://assets/Heightmaps/ISLAND_4k_2/height2.exr" id="2_g6rvl"]
 [ext_resource type="Texture2D" uid="uid://duv3r3al1rd2f" path="res://assets/textures/prototype_slot1_albedo_bump.png" id="2_t0lqd"]
 [ext_resource type="Script" uid="uid://bw4r5sufd8cuj" path="res://Player.gd" id="3_75cqa"]
-[ext_resource type="Texture2D" uid="uid://cojaqwy46h6bb" path="res://assets/Heightmaps/ISLAND_4k_2/splat2.png" id="3_mu2dg"]
+[ext_resource type="Texture2D" uid="uid://b4xtrmf4okrmy" path="res://assets/Heightmaps/ISLAND_4k_2/splat2.png" id="3_mu2dg"]
 [ext_resource type="Texture2D" uid="uid://d0wneqs640mrc" path="res://assets/textures/slot0_albedo_bump.png" id="4_g6rvl"]
 [ext_resource type="Texture2D" uid="uid://bv12oixipstqf" path="res://assets/textures/prototype_slot1_normal_roughness.png" id="6_788rj"]
 [ext_resource type="Texture2D" uid="uid://dtpmb3n8hopcl" path="res://assets/textures/prototype_slot3_albedo_bump.png" id="6_g6rvl"]
 [ext_resource type="Texture2D" uid="uid://c0dvch1evaelx" path="res://assets/textures/slot0_normal_roughness.png" id="8_cp3p3"]
-[ext_resource type="Script" uid="uid://djhy8ncwlg3a1" path="res://meshes.gd" id="10_788rj"]
+[ext_resource type="Script" uid="uid://whxghd43rsld" path="res://meshes.gd" id="10_788rj"]
 [ext_resource type="Texture2D" uid="uid://cp1wfxow6cyil" path="res://assets/textures/prototype_slot3_normal_roughness.png" id="10_mu2dg"]
 [ext_resource type="Material" uid="uid://cs4hqr707kbit" path="res://vertex_displace_World.tres" id="11_a8tqb"]
-[ext_resource type="Script" uid="uid://b2f43bouogqbd" path="res://compute_helper.gd" id="12_6qr5l"]
+[ext_resource type="Script" uid="uid://baevecbp4jxgh" path="res://compute_helper.gd" id="12_6qr5l"]
 [ext_resource type="Script" uid="uid://qyapyex6u2oh" path="res://label.gd" id="12_g6rvl"]
-[ext_resource type="Script" uid="uid://c1syblpos3sfh" path="res://directional_light_3d.gd" id="12_mu2dg"]
+[ext_resource type="Script" uid="uid://bhlh0cvellv0m" path="res://directional_light_3d.gd" id="12_mu2dg"]
+[ext_resource type="Script" uid="uid://b2xx1mauv7xpf" path="res://spring_arm_3d.gd" id="15_a8tqb"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_s7c06"]
 
@@ -326,6 +327,7 @@ mesh = SubResource("CapsuleMesh_5h11f")
 
 [node name="SpringArm3D" type="SpringArm3D" parent="Player" unique_id=1894614479]
 spring_length = 5.0
+script = ExtResource("15_a8tqb")
 
 [node name="Camera3D" type="Camera3D" parent="Player/SpringArm3D" unique_id=2042230522]
 transform = Transform3D(1, -9.313226e-10, -7.450581e-09, -9.313226e-10, 1, -2.9802322e-08, 7.450581e-09, 0, 1, 0, 0, 0)
