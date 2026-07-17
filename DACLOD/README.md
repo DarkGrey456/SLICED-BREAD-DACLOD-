@@ -5,21 +5,18 @@ Very high performance alternative to both clipmapping and chunked LOD. I would
 call it DACLOD, Data Aligned Chunked LOD
 
 ## Description
-This is a very fast terrain viewer . Current version is experimental. The shader attempts to snap the vertices of neighbouring LODS. The concept
-is very simple, the VERTEX position is used to determine if the vertex is at an edge. I gave alternating vertices a red color value in Blender, then
-re-exported. These red vertices are not present in next level of detail below, so they can be snapped to the position on the edge between the neighbour edge
-vertices. The actual effect isn't currently working - there may be a problem with the fine level displacement calculation.
+This is a very fast terrain viewer . Current version uses Terrain chunk "skirts" or hems that extrude vertically downwards by about 2 units at the boundary of the chunk. These are then shaded differently as a special condition in the vertex and fragment shaders to fake the normals and compute the texture coordinates to blend them with the ground. The normal vector contribution is also darkened slightly.
 
 ## Features
 * Load a 4k heightmap
 * Viewport dependant level of detail
 * occluders and AABB's for heightmap displacement meshes 
 * Collisions working
-* The images and the meshes are aligned to power of 2 levels, so all the grid chunks fit better into GPU memory
+* The images are aligned to power of 2 levels, so all the grid chunks fit better into GPU memory
 
 
 ## Installation
-Not working, just run the demo scene if you want
+ demo scene 
 ## Tool Setup
 > #### Example Map
 ### Dependencies
@@ -28,10 +25,7 @@ In project
 ## Current Issues
 
 * hard coded to specific image size, not tested on larger or alternative maps.
-* collisions models are occasionally slightly off target with compute shader collision generation.
 * compute shader collisions cause a frame rate drop when the collision mesh is added to the scene.
-* collision models are very off target with gdscript versions.
-
   
 ## Credits
 https://github.com/SpaghettiCodeMasterThe/Godot-Quadtree-Terrain
@@ -39,6 +33,8 @@ https://github.com/SpaghettiCodeMasterThe/Godot-Quadtree-Terrain
 Also the hTerrain addon.
 
 And the SimpleTerrain addon.
+
+And last but not least the members of the official Godot forums.
 
 ## License
 MIT. I hope this helps somebody in their Godot journey!
