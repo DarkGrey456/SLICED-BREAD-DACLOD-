@@ -105,11 +105,8 @@ void vertex() {
 	float H1 = HEIGHT_SCALE*texture(texture_height, vec2((world_pos.x+1.0)/4096.0,world_pos.z/4096.0)).r;
 	float H2 = HEIGHT_SCALE*texture(texture_height, vec2((world_pos.x)/4096.0,(world_pos.z-1.0)/4096.0)).r;
 	float H3 = HEIGHT_SCALE*texture(texture_height, vec2((world_pos.x)/4096.0,(world_pos.z+1.0)/4096.0)).r;
-	//vec3 v1 = vec3(world_pos.x - 1.0, H0, world_pos.z);
-	//vec3 v2 = vec3(world_pos.x + 1.0, H1, world_pos.z);
-	//vec3 v3 = vec3(world_pos.x, H2, world_pos.z - 1.0);
-	/*vec3 v4 = vec3(world_pos.x, H3, world_pos.z + 1.0);
-	vec3 VA = vec3( 2.0, H1 - H0, 0.0 );
+	
+	/*vec3 VA = vec3( 2.0, H1 - H0, 0.0 );
 	vec3 VB = vec3( 0.0, H3 - H2, 2.0);
 	vec3 VX = cross(VA,VB); */
 	// i j k 
@@ -148,31 +145,110 @@ void vertex() {
 	float splat_color = get_splat_color(splat_map);
 	float hval = (splat_color* h1 + (1.0-splat_color)* h3);
 
-	// this function ,must be the same as the function that generates the collisions
-	// the vy check is for the terrain tiles *with* skirts ... not currently used.
-	if( COLOR.r == 1.0 && COLOR.g == 0.0 && COLOR.b == 0.0){
-		float S0 = texture(splat_tex, vec2((world_pos.x-1.0)/4096.0,world_pos.z/4096.0)).g;
-		float S1 = texture(splat_tex, vec2((world_pos.x+1.0)/4096.0,world_pos.z/4096.0)).g;
-		float S2 = texture(splat_tex, vec2((world_pos.x)/4096.0,(world_pos.z-1.0)/4096.0)).g;
-		float S3 = texture(splat_tex, vec2((world_pos.x)/4096.0,(world_pos.z+1.0)/4096.0)).g;		
+	float cam_to_vert = length(VERTEX - CAMERA_POSITION_WORLD);
+	float cam_to_node = length(NODE_POSITION_WORLD - CAMERA_POSITION_WORLD);
+
+	if( ((cam_to_node < 256.0))
+		&& COLOR.r == 1.0 && COLOR.g == 0.0 && COLOR.b == 0.0){
+
+		//VERTEX.y += sin(TIME*0.1);
 		float splat_col = 0.0;
+		
+	
 		if (VERTEX.x < (0.0 + 0.25)  ){
-			splat_col = (S2 + S3)/2.0; ;//  mix( H2, H3, 0.5) * HEIGHT_SCALE;
+			vec3 v3 = vec3(VERTEX.x, H2, VERTEX.z - 1.0);
+			vec3 v4 = vec3(VERTEX.x, H3, VERTEX.z + 1.0);
+			float S2 = texture(splat_tex, vec2((world_pos.x)/4096.0,(world_pos.z-1.0)/4096.0)).g;
+			float S3 = texture(splat_tex, vec2((world_pos.x)/4096.0,(world_pos.z+1.0)/4096.0)).g;				
+			
+			float h11 =texture(alb_h_1, vec2( world_pos.x, world_pos.z-1.0)*uv_scale.x/128.0).a; 
+			float h12 =texture(alb_h_1, vec2( world_pos.x, world_pos.z+1.0)*uv_scale.x/128.0).a; 
+	//float h2 =texture(alb_h_2, UV*uv_scale.y).a; 
+			float h31 =texture(alb_h_3, vec2( world_pos.x, world_pos.z-1.0)*uv_scale.z/128.0).a; 	
+			float h32 =texture(alb_h_3, vec2( world_pos.x, world_pos.z+1.0)*uv_scale.z/128.0).a; 				
+			float hval_snap1 = (S2* h11 + (1.0-S2)* h31);
+			vec3 vA =  5.0 * hval_snap1 * NORMAL;// - 2.5 * NORMAL;		
+			float hval_snap2 = (S3* h12 + (1.0-S3)* h32);
+			vec3 vB =  5.0 * hval_snap2 * NORMAL;// - 2.5 * NORMAL;		
+			vec3 vC = (vB - vA);
+
+			float len = length(vC);
+			vC = normalize(vC);
+			//VERTEX += vA + vC  *0.5;
+			VERTEX =  v3 + vA + vC  *len*0.5;			
 		}
 		if (VERTEX.x > 128.0-0.25){
-			splat_col =(S2 + S3)/2.0;//mix( H2, H3, 0.5) * HEIGHT_SCALE;
+			vec3 v3 = vec3(VERTEX.x, H2, VERTEX.z - 1.0);
+			vec3 v4 = vec3(VERTEX.x, H3, VERTEX.z + 1.0);
+			float S2 = texture(splat_tex, vec2((world_pos.x)/4096.0,(world_pos.z-1.0)/4096.0)).g;
+			float S3 = texture(splat_tex, vec2((world_pos.x)/4096.0,(world_pos.z+1.0)/4096.0)).g;				
+			float h11 =texture(alb_h_1, vec2( world_pos.x, world_pos.z-1.0)*uv_scale.x/128.0).a; 
+			float h12 =texture(alb_h_1, vec2( world_pos.x, world_pos.z+1.0)*uv_scale.x/128.0).a; 
+	//float h2 =texture(alb_h_2, UV*uv_scale.y).a; 
+			float h31 =texture(alb_h_3, vec2( world_pos.x, world_pos.z-1.0)*uv_scale.z/128.0).a; 	
+			float h32 =texture(alb_h_3, vec2( world_pos.x, world_pos.z+1.0)*uv_scale.z/128.0).a; 	
+			float hval_snap1 = (S2* h11 + (1.0-S2)* h31);
+			vec3 vA =  5.0 * hval_snap1 * NORMAL;// - 2.5 * NORMAL;		
+			float hval_snap2 = (S3* h12 + (1.0-S3)* h32);
+			vec3 vB =  5.0 * hval_snap2 * NORMAL;// - 2.5 * NORMAL;		
+			vec3 vC = (vB - vA);
+
+			//VERTEX = v3 + vA + vC  *0.5;
+			float len = length(vC);
+			vC = normalize(vC);
+			//VERTEX += vA + vC  *0.5;
+			VERTEX =  v3+vA + vC  *len*0.5;			
 		}
 		if (VERTEX.z < (0.0 + 0.25)  ){
-			splat_col = (S0 + S1)/2.0;//mix( H0, H1, 0.5) * HEIGHT_SCALE;
+			vec3 v1 = vec3(VERTEX.x - 1.0, H0, VERTEX.z);
+			vec3 v2 = vec3(VERTEX.x + 1.0, H1, VERTEX.z);
+			float S0 = texture(splat_tex, vec2((world_pos.x-1.0)/4096.0,world_pos.z/4096.0)).g;
+			float S1 = texture(splat_tex, vec2((world_pos.x+1.0)/4096.0,world_pos.z/4096.0)).g;			
+			float h11 =texture(alb_h_1, vec2( world_pos.x-1.0, world_pos.z)*uv_scale.x/128.0).a; 
+			float h12 =texture(alb_h_1, vec2( world_pos.x+1.0, world_pos.z)*uv_scale.x/128.0).a; 
+	//float h2 =texture(alb_h_2, UV*uv_scale.y).a; 
+			float h31 =texture(alb_h_3, vec2( world_pos.x-1.0, world_pos.z)*uv_scale.z/128.0).a; 	
+			float h32 =texture(alb_h_3, vec2( world_pos.x+1.0, world_pos.z)*uv_scale.z/128.0).a; 	
+			
+			float hval_snap1 = (S0* h11 + (1.0-S0)* h31);
+			vec3 vA =  5.0 * hval_snap1 * NORMAL;// - 2.5 * NORMAL;		
+			float hval_snap2 = (S1* h12 + (1.0-S1)* h32);
+			vec3 vB =  5.0 * hval_snap2 * NORMAL;// - 2.5 * NORMAL;		
+			vec3 vC = (vB - vA);
+
+			//VERTEX += vA + vC*0.5  ;	
+			float len = length(vC);
+			vC = normalize(vC);
+			//VERTEX += vA + vC  *0.5;
+			VERTEX =  v1+vA + vC  *len*0.5;							
 		}
 		if (VERTEX.z > 128.0-0.25){
-			 splat_col = (S0 + S1)/2.0;//mix( H0, H1, 0.5) * HEIGHT_SCALE;
+			vec3 v1 = vec3(VERTEX.x - 1.0, H0, VERTEX.z);
+			vec3 v2 = vec3(VERTEX.x + 1.0, H1, VERTEX.z);			
+			float S0 = texture(splat_tex, vec2((world_pos.x-1.0)/4096.0,world_pos.z/4096.0)).g;
+			float S1 = texture(splat_tex, vec2((world_pos.x+1.0)/4096.0,world_pos.z/4096.0)).g;			
+			float h11 =texture(alb_h_1, vec2( world_pos.x-1.0, world_pos.z)*uv_scale.x/128.0).a; 
+			float h12 =texture(alb_h_1, vec2( world_pos.x+1.0, world_pos.z)*uv_scale.x/128.0).a; 
+	//float h2 =texture(alb_h_2, UV*uv_scale.y).a; 
+			float h31 =texture(alb_h_3, vec2( world_pos.x-1.0, world_pos.z)*uv_scale.z/128.0).a; 	
+			float h32 =texture(alb_h_3, vec2( world_pos.x+1.0, world_pos.z)*uv_scale.z/128.0).a; 	
+			float hval_snap1 = (S0* h11 + (1.0-S0)* h31);
+			vec3 vA =  5.0 * hval_snap1 * NORMAL;// - 2.5 * NORMAL;		
+			float hval_snap2 = (S1* h12 + (1.0-S1)* h32);
+			vec3 vB =  5.0 * hval_snap2 * NORMAL;// - 2.5 * NORMAL;		
+			vec3 vC = (vB - vA);
+			float len = length(vC);
+			vC = normalize(vC);
+			//VERTEX += vA + vC  *0.5;
+			VERTEX =  v1+vA + vC  *len*0.5;
+			// VERTEX = 					
 		}				
 			
-	float hval_snap = (splat_col* h1 + (1.0-splat_col)* h3);
-	VERTEX +=  5.0 * hval_snap * NORMAL;// - 2.5 * NORMAL;	
+
 	}
 	else{
+		// this function ,must be the same as the function that generates the collisions
+		// the vy check is for the terrain tiles *with* skirts ... not currently used.
 		if (vy > -0.5)
 			VERTEX +=  5.0 * hval * NORMAL;// - 2.5 * NORMAL;			
 	}
