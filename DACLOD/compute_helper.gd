@@ -77,29 +77,6 @@ func generate_AABB_and_occluders(height_map:Image)->PackedVector4Array:
 
 #=======================================================================================================
 
-#layout(set = 0, binding = 0) uniform sampler2D height_tex;
-#layout(set = 0, binding = 1) uniform sampler2D splat_tex;
-#
-#layout(set = 0, binding = 2) uniform sampler2D tex1;
-#layout(set = 0, binding = 3) uniform sampler2D tex3;
-#
-#
-#layout(std140,set = 1, binding = 4) readonly buffer Faces{
-#
-	#vec3 data[];
-#} faces;
-#
-#
-#layout(set = 0, binding = 5, std430) restrict readonly buffer Params {
-	#vec2 grid_coord;
-	#vec4 uv_scale;
-	#uint splat_col;
-	#float HEIGHT_SCALE;
-	#
-#}params;
-#
-#
-#layout(std140,set = 1, binding = 6) writeonly buffer OutputFaces{
 #=======================================================================================================
 func generate_physics_shape(height_map:Image, 
 							splat_map:Image, 
@@ -140,30 +117,15 @@ func generate_physics_shape(height_map:Image,
 		tex2_image.clear_mipmaps()
 	tex2_image.convert(Image.FORMAT_RGBA8)	
 
-
-	compute.register_sampler("height_tex", 11, image.get_width(), image.get_height(), image.get_data(), RenderingDevice.DATA_FORMAT_R32_SFLOAT)	
-	compute.register_sampler("splat_tex", 12, splat_image.get_width(), splat_image.get_height(), splat_image.get_data(), RenderingDevice.DATA_FORMAT_R8G8B8A8_UNORM)	
-	compute.register_sampler("tex1", 13, tex1_image.get_width(), tex1_image.get_height(), tex1_image.get_data(), RenderingDevice.DATA_FORMAT_R8G8B8A8_UNORM)	
-	compute.register_sampler("tex3", 14, tex2_image.get_width(), tex2_image.get_height(), tex2_image.get_data(), RenderingDevice.DATA_FORMAT_R8G8B8A8_UNORM)	
+	compute.register_sampler("height_tex", 11, image.get_width(),       image.get_height(),       image.get_data(),       RenderingDevice.DATA_FORMAT_R32_SFLOAT)	
+	compute.register_sampler("splat_tex",  12, splat_image.get_width(), splat_image.get_height(), splat_image.get_data(), RenderingDevice.DATA_FORMAT_R8G8B8A8_UNORM)	
+	compute.register_sampler("tex1",       13, tex1_image.get_width(),  tex1_image.get_height(),  tex1_image.get_data(),  RenderingDevice.DATA_FORMAT_R8G8B8A8_UNORM)	
+	compute.register_sampler("tex3",       14, tex2_image.get_width(),  tex2_image.get_height(),  tex2_image.get_data(),  RenderingDevice.DATA_FORMAT_R8G8B8A8_UNORM)	
 		
-	#if mesh_verts.is_compressed():
-		#mesh_verts.decompress()
-	#compute.register_texture("mesh_verts", 8, 128, 128, mesh_verts.get_data(), RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT)
-	#
-	
 	var mesh_byte_array:PackedByteArray = mesh_verts.to_byte_array()
 	compute.register_storage_buffer("source_verts", 10, mesh_byte_array.size(), mesh_byte_array)
-	compute.register_storage_buffer("dest_verts", 15, mesh_byte_array.size(), [])
-	#var output_byte_array:PackedByteArray
-	#compute.register_storage_buffer("res_verts",12, mesh_byte_array.size(), [])
-	#compute.register_texture("output_verts", 12, 128, 128,[], RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT)
-	#var params = PackedFloat32Array([grid_coord.x, grid_coord.y, 
-									#uv_scale.x, uv_scale.y, uv_scale.z, uv_scale.w, 
-									#float(splat_col), 
-									#HEIGHT_SCALE])
-	#var params_byte_array = params.to_byte_array()
-	#compute.register_storage_buffer("Params", 6, params_byte_array.size(), params_byte_array)
-	# FIRST PASS, Find min and max height values
+	compute.register_storage_buffer("dest_verts",   15, mesh_byte_array.size(), [])
+
 	var my_data :PackedFloat32Array = [15.0, 
 										16.0, 
 										HEIGHT_SCALE,
@@ -172,6 +134,7 @@ func generate_physics_shape(height_map:Image,
 										uv_scale.y,
 										uv_scale.z,
 										uv_scale.w]
+										
 	var my_data_bytes = my_data.to_byte_array()
 	compute.register_uniform_buffer("my_data",9,my_data_bytes.size(),my_data_bytes )	
 	
@@ -181,9 +144,8 @@ func generate_physics_shape(height_map:Image,
 	var final_mesh_data = compute.fetch_buffer("dest_verts")
 	var float_data = final_mesh_data.to_vector4_array()
 	return float_data
-	#print(float_data)
-	#compute.unload_shader("compute_height")
 
+# Not Called every frame, just when the player crosses a tile boundary, if required
 func generate_physics_shape_per_frame(height_map:Image, 
 							splat_map:Image, 
 							tex1:Image, 
@@ -194,14 +156,15 @@ func generate_physics_shape_per_frame(height_map:Image,
 							HEIGHT_SCALE:float,
 							mesh_verts:PackedVector4Array)->PackedVector4Array:
 	
-	var my_data :PackedFloat32Array = [grid_coord.x, 
+	var my_data :PackedFloat32Array = [ grid_coord.x, 
 										grid_coord.y, 
 										HEIGHT_SCALE,
 										splat_col,
 										uv_scale.x,
 										uv_scale.y,
 										uv_scale.z,
-										uv_scale.w]
+										uv_scale.w ]
+										
 	var my_data_bytes = my_data.to_byte_array()
 	compute.update_buffer("my_data", my_data_bytes )	
 		
