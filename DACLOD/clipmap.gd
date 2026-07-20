@@ -781,7 +781,7 @@ func _process(delta: float) -> void:
 		
 		
 	if moved:
-		global_position = Vector3( (floor(player.global_position.x)-2048.0), 0.0, (floor(player.global_position.z)-2048.0))							 		
+	#	global_position = Vector3( (floor(player.global_position.x)-2048.0), 0.0, (floor(player.global_position.z)-2048.0))							 		
 		tracked_grid_nodes.clear()			
 		# generate collision chunks near the player ... the current chunk should already
 		# be generated and the player shouldn't have time to run faster than the thread
