@@ -132,12 +132,13 @@ func flatten_grid_pattern_at_point(p:Vector2i, tracked_grid_nodes: Array, b_thre
 			var py = grid_pattern[ i ][ j ].y + p.y
 			# bounds check
 			if px >= 0 and px < grid_size and py >= 0 and py < grid_size :
+				# track
+				tracked_grid_nodes.append( Vector2i( px, py) )
 				# if the node has no collider
 				if grid[ px ][ py ].storage[ 0 ].collider_active == false:
 					# activate
 					grid[ px ][ py ].storage[ 0 ].collider_active = true
-					# track
-					tracked_grid_nodes.append( Vector2i( px, py) )
+
 					# generate
 					if b_threaded:		
 						var rect:Rect2
