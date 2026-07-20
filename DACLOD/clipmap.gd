@@ -730,17 +730,15 @@ var old_world_coords = Vector3( floor( (2048.0 +64.0)/ 4.0) , 0.0, floor( (2048.
 
 
 func _process(delta: float) -> void:
-	#global_position = 
+
 	var curr_world_coords_grid32 = Vector3( floor( player.global_position.x / 4.0) , 
 											0.0, 
 											floor( player.global_position.z / 4.0)  )
 	if (( int(curr_world_coords_grid32.x) != int(old_world_coords.x) ) or
 		( int(curr_world_coords_grid32.z) != int(old_world_coords.z) ))  :	
-		old_world_coords = curr_world_coords_grid32 #Vector3( floor( player.global_position.x ) / 32.0, 0.0, floor( player.global_position.z ) / 32.0 )
-		global_position = Vector3(floor( player.global_position.x ) - 2048.0 - 64.0 , 0.0, floor( player.global_position.z ) - 2048.0 - 64.0)
-	#if floor(old_world_coords.x) != floor(player.global_position.x/8.0) or floor(old_world_coords.y) != floor(player.global_position.z/8.0):
+		old_world_coords = curr_world_coords_grid32
+		global_position = Vector3(floor( player.global_position.x ) - 2048.0 - 64.0 + 0.5 , 0.0, floor( player.global_position.z ) - 2048.0 - 64.0 + 0.5)
 	
-	#	old_world_coords = Vector2( 0.125*global_position.x, 0.125*global_position.z )
 		
 	
 	var grid_coords = world_coords_to_grid_coords(player.global_position.x, player.global_position.z)
