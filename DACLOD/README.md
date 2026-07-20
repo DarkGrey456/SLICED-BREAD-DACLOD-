@@ -2,7 +2,7 @@
 
 
 Very high performance alternative to both clipmapping and chunked LOD. I would 
-call it DACLOD, Data Aligned Chunked LOD
+call it DACLOD, Data Aligned Chunked LOD. There is also a wandering GPU clipmap implementation using square grids. 
 
 ## Description
 This is a very fast terrain viewer . Current version uses Terrain chunk "skirts" or hems that extrude vertically downwards by about 2 units at the boundary of the chunk. These are then shaded differently as a special condition in the vertex and fragment shaders to fake the normals and compute the texture coordinates to blend them with the ground. The normal vector contribution is also darkened slightly.
