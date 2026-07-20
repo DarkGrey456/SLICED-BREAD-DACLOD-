@@ -684,11 +684,11 @@ func _ready() -> void:
 	for i in grid_size:
 		for j in grid_size:
 			# duplicate the tile meshes in a grid pattern
-			var dup3 :MeshInstance3D= tiles_256.get_lod(3).duplicate()
-			var dup2 :MeshInstance3D= tiles_256.get_lod(2).duplicate()
-			var dup1 :MeshInstance3D= tiles_256.get_lod(1).duplicate()
-			var dup0 :MeshInstance3D= tiles_256.get_lod(0).duplicate()
-			var dup : MeshInstance3D = dup0
+			
+			
+			
+			
+			
 			var tile_pos = Vector3( float( i ) * cell_size, # cell_size is also set by the mesh size
 									0.0, 
 									float( j ) * cell_size)
@@ -696,23 +696,34 @@ func _ready() -> void:
 			var lengthToCenter = (center - tile_pos ).length()
 			if ((lengthToCenter < 2048.0) and  
 				(lengthToCenter > 1024.0)):
+				var dup3 :MeshInstance3D= tiles_256.get_lod(3).duplicate()
 				add_child(dup3)
-				dup = dup3
+				dup3.global_position = tile_pos 
+				grid[ i ][ j ].storage[0].node = dup3				
 			elif ((lengthToCenter < 1024.0) and  
 				(lengthToCenter > 512.0)):
-				add_child(dup2)	
-				dup = dup2
+				var dup2 :MeshInstance3D= tiles_256.get_lod(2).duplicate()
+				add_child(dup2)					
+				dup2.global_position = tile_pos 
+				grid[ i ][ j ].storage[0].node = dup2
 			elif ((lengthToCenter < 512.0 + 16.0) and  
 				(lengthToCenter > 256.0 - 16.0)):
+				var dup1 :MeshInstance3D= tiles_256.get_lod(1).duplicate()
 				add_child(dup1)		
-				dup = dup1
+				dup1.global_position = tile_pos 
+				grid[ i ][ j ].storage[0].node = dup1
 			elif (lengthToCenter < 256.0 + 16.0) :
+				var dup0 :MeshInstance3D= tiles_256.get_lod(0).duplicate()
 				add_child(dup0)									
-				dup = dup0
-			
-			dup.global_position = tile_pos 
+				dup0.global_position = tile_pos 
+				grid[ i ][ j ].storage[0].node = dup0
+			else:
+				var dup4 :MeshInstance3D= tiles_256.get_lod(4).duplicate()
+				add_child(dup4)									
+				dup4.global_position = tile_pos 
+				grid[ i ][ j ].storage[0].node = dup4				
 										   
-			grid[ i ][ j ].storage[0].node = dup
+			
 				
 				
 	load_image()
