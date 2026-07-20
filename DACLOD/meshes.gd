@@ -3,8 +3,34 @@ extends Node3D
 
 
 
-@onready var plane__128: MeshInstance3D = $Plane__128
+#@onready var plane__128: MeshInstance3D = $Plane__128
 
+@onready var plane_001: MeshInstance3D = $Plane_001
+@onready var plane_002: MeshInstance3D = $Plane_002
+@onready var plane_003: MeshInstance3D = $Plane_003
+@onready var plane_004: MeshInstance3D = $Plane_004
+@onready var plane_005: MeshInstance3D = $Plane_005
+@onready var plane__128: MeshInstance3D = $Plane_006
+var plane_006 = plane__128
+
+func get_lod( lod_num: int )->MeshInstance3D:
+	
+	match lod_num:
+		0:
+			return plane__128
+		1:
+			return plane_005
+		2: 
+			return plane_004
+		3:
+			return plane_003
+		4:
+			return plane_002
+		5:
+			return plane_001
+			
+	return plane_006
+		
 
 func get_mesh_faces()->PackedVector4Array:
 	var faces:PackedVector4Array = PackedVector4Array()

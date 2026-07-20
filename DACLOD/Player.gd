@@ -1,6 +1,6 @@
 extends CharacterBody3D
 @onready var camera_3d: Camera3D = $SpringArm3D/Camera3D
-@export var SPEED = 10.0
+@export var SPEED = 20.0
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED

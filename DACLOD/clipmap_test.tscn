@@ -1,21 +1,21 @@
-[gd_scene format=4 uid="uid://kkjo52nt4c6l"]
+[gd_scene format=4 uid="uid://bvah1n3yrngjo"]
 
-[ext_resource type="Script" uid="uid://byvxp4664eau2" path="res://hmap_loader.gd" id="1_nkh26"]
-[ext_resource type="Texture2D" uid="uid://dnwbmg41kby1i" path="res://assets/Heightmaps/ISLAND_4k_2/height2.exr" id="2_g6rvl"]
-[ext_resource type="Texture2D" uid="uid://duv3r3al1rd2f" path="res://assets/textures/prototype_slot1_albedo_bump.png" id="2_t0lqd"]
-[ext_resource type="Script" uid="uid://bw4r5sufd8cuj" path="res://Player.gd" id="3_75cqa"]
-[ext_resource type="Texture2D" uid="uid://cojaqwy46h6bb" path="res://assets/Heightmaps/ISLAND_4k_2/splat2.png" id="3_a8tqb"]
-[ext_resource type="Texture2D" uid="uid://d0wneqs640mrc" path="res://assets/textures/slot0_albedo_bump.png" id="4_g6rvl"]
-[ext_resource type="Texture2D" uid="uid://bv12oixipstqf" path="res://assets/textures/prototype_slot1_normal_roughness.png" id="6_788rj"]
-[ext_resource type="Texture2D" uid="uid://dtpmb3n8hopcl" path="res://assets/textures/prototype_slot3_albedo_bump.png" id="6_g6rvl"]
-[ext_resource type="Texture2D" uid="uid://c0dvch1evaelx" path="res://assets/textures/slot0_normal_roughness.png" id="8_cp3p3"]
-[ext_resource type="Script" uid="uid://whxghd43rsld" path="res://meshes.gd" id="10_788rj"]
-[ext_resource type="Texture2D" uid="uid://cp1wfxow6cyil" path="res://assets/textures/prototype_slot3_normal_roughness.png" id="10_mu2dg"]
-[ext_resource type="Material" uid="uid://cs4hqr707kbit" path="res://vertex_displace_World.tres" id="11_a8tqb"]
-[ext_resource type="Script" uid="uid://baevecbp4jxgh" path="res://compute_helper.gd" id="12_6qr5l"]
-[ext_resource type="Script" uid="uid://qyapyex6u2oh" path="res://label.gd" id="12_g6rvl"]
-[ext_resource type="Script" uid="uid://ctu4u6a54ivtk" path="res://directional_light_3d.gd" id="12_mu2dg"]
-[ext_resource type="Script" uid="uid://dgp35g1hf3paq" path="res://spring_arm_3d.gd" id="15_a8tqb"]
+[ext_resource type="Script" uid="uid://vrylx2y6r3cb" path="res://clipmap.gd" id="1_shl62"]
+[ext_resource type="Texture2D" uid="uid://dnwbmg41kby1i" path="res://assets/Heightmaps/ISLAND_4k_2/height2.exr" id="2_u2pkg"]
+[ext_resource type="Texture2D" uid="uid://cojaqwy46h6bb" path="res://assets/Heightmaps/ISLAND_4k_2/splat2.png" id="3_7u03u"]
+[ext_resource type="Texture2D" uid="uid://duv3r3al1rd2f" path="res://assets/textures/prototype_slot1_albedo_bump.png" id="4_4ww41"]
+[ext_resource type="Texture2D" uid="uid://dtpmb3n8hopcl" path="res://assets/textures/prototype_slot3_albedo_bump.png" id="5_kxga3"]
+[ext_resource type="Texture2D" uid="uid://d0wneqs640mrc" path="res://assets/textures/slot0_albedo_bump.png" id="6_qt77f"]
+[ext_resource type="Texture2D" uid="uid://bv12oixipstqf" path="res://assets/textures/prototype_slot1_normal_roughness.png" id="7_fxupk"]
+[ext_resource type="Texture2D" uid="uid://cp1wfxow6cyil" path="res://assets/textures/prototype_slot3_normal_roughness.png" id="8_auifg"]
+[ext_resource type="Texture2D" uid="uid://c0dvch1evaelx" path="res://assets/textures/slot0_normal_roughness.png" id="9_fw4od"]
+[ext_resource type="Script" uid="uid://whxghd43rsld" path="res://meshes.gd" id="10_sf61h"]
+[ext_resource type="Material" uid="uid://cs4hqr707kbit" path="res://vertex_displace_World.tres" id="11_2kim7"]
+[ext_resource type="Script" uid="uid://baevecbp4jxgh" path="res://compute_helper.gd" id="12_dwwxu"]
+[ext_resource type="Script" uid="uid://ctu4u6a54ivtk" path="res://directional_light_3d.gd" id="13_bpykm"]
+[ext_resource type="Script" uid="uid://bw4r5sufd8cuj" path="res://Player.gd" id="14_artj2"]
+[ext_resource type="Script" uid="uid://dgp35g1hf3paq" path="res://spring_arm_3d.gd" id="15_ixr8r"]
+[ext_resource type="Script" uid="uid://qyapyex6u2oh" path="res://label.gd" id="16_dgoto"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_s7c06"]
 
@@ -237,77 +237,58 @@ volumetric_fog_density = 0.005
 [node name="ScaneRoot" type="Node3D" unique_id=1334672192]
 
 [node name="Node3D" type="Node3D" parent="." unique_id=1340837727 node_paths=PackedStringArray("player")]
-script = ExtResource("1_nkh26")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18, 0, 22)
+script = ExtResource("1_shl62")
 compute_shader_collision = true
-height_map_texture = ExtResource("2_g6rvl")
-gpuSplat = ExtResource("3_a8tqb")
-alb_h_1 = ExtResource("2_t0lqd")
-alb_h_2 = ExtResource("6_g6rvl")
-alb_h_3 = ExtResource("4_g6rvl")
-alb_h_4 = ExtResource("2_t0lqd")
-norm_rough_1 = ExtResource("6_788rj")
-norm_rough_2 = ExtResource("10_mu2dg")
-norm_rough_3 = ExtResource("8_cp3p3")
-norm_rough_4 = ExtResource("6_788rj")
-UV_SCALE = Vector4(4, 4, 8, 2)
+height_map_texture = ExtResource("2_u2pkg")
+gpuSplat = ExtResource("3_7u03u")
+alb_h_1 = ExtResource("4_4ww41")
+alb_h_2 = ExtResource("5_kxga3")
+alb_h_3 = ExtResource("6_qt77f")
+alb_h_4 = ExtResource("4_4ww41")
+norm_rough_1 = ExtResource("7_fxupk")
+norm_rough_2 = ExtResource("8_auifg")
+norm_rough_3 = ExtResource("9_fw4od")
+norm_rough_4 = ExtResource("7_fxupk")
+UV_SCALE = Vector4(4, 4, 4, 4)
 player = NodePath("../Player")
 channel_for_splat = 1
 
 [node name="tiles_256" type="Node3D" parent="Node3D" unique_id=1555305811]
-script = ExtResource("10_788rj")
+script = ExtResource("10_sf61h")
 
 [node name="Plane_001" type="MeshInstance3D" parent="Node3D/tiles_256" unique_id=1295732036]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 0.5)
-visibility_range_begin = 2048.0
-visibility_range_begin_margin = 16.0
 mesh = SubResource("ArrayMesh_ogpnm")
-surface_material_override/0 = ExtResource("11_a8tqb")
+surface_material_override/0 = ExtResource("11_2kim7")
 
 [node name="Plane_002" type="MeshInstance3D" parent="Node3D/tiles_256" unique_id=1672756171]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 0.5)
-visibility_range_begin = 1024.0
-visibility_range_begin_margin = 16.0
-visibility_range_end = 2048.0
-visibility_range_end_margin = 16.0
 mesh = SubResource("ArrayMesh_25mcg")
-surface_material_override/0 = ExtResource("11_a8tqb")
+surface_material_override/0 = ExtResource("11_2kim7")
 
 [node name="Plane_003" type="MeshInstance3D" parent="Node3D/tiles_256" unique_id=2096537391]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 0.5)
-visibility_range_begin = 512.0
-visibility_range_begin_margin = 16.0
-visibility_range_end = 1024.0
-visibility_range_end_margin = 16.0
 mesh = SubResource("ArrayMesh_3q2xc")
-surface_material_override/0 = ExtResource("11_a8tqb")
+surface_material_override/0 = ExtResource("11_2kim7")
 
 [node name="Plane_004" type="MeshInstance3D" parent="Node3D/tiles_256" unique_id=1082843281]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 0.5)
-visibility_range_begin = 256.0
-visibility_range_begin_margin = 16.0
-visibility_range_end = 512.0
-visibility_range_end_margin = 16.0
 mesh = SubResource("ArrayMesh_863n1")
-surface_material_override/0 = ExtResource("11_a8tqb")
+surface_material_override/0 = ExtResource("11_2kim7")
 
 [node name="Plane_005" type="MeshInstance3D" parent="Node3D/tiles_256" unique_id=1453878963]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 0.5)
-visibility_range_begin = 128.0
-visibility_range_begin_margin = 16.0
-visibility_range_end = 256.0
-visibility_range_end_margin = 16.0
 mesh = SubResource("ArrayMesh_8yju7")
-surface_material_override/0 = ExtResource("11_a8tqb")
+surface_material_override/0 = ExtResource("11_2kim7")
 
 [node name="Plane_006" type="MeshInstance3D" parent="Node3D/tiles_256" unique_id=260595319]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 0.5)
-visibility_range_end = 128.0
-visibility_range_end_margin = 16.0
 mesh = SubResource("ArrayMesh_7nqhe")
-surface_material_override/0 = ExtResource("11_a8tqb")
+surface_material_override/0 = ExtResource("11_2kim7")
 
 [node name="ComputeHelper" type="Node3D" parent="." unique_id=1178884514]
-script = ExtResource("12_6qr5l")
+script = ExtResource("12_dwwxu")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1877521021]
 environment = SubResource("Environment_0rrkm")
@@ -319,11 +300,11 @@ shadow_enabled = true
 shadow_bias = 0.397
 shadow_normal_bias = 5.564
 directional_shadow_max_distance = 2000.0
-script = ExtResource("12_mu2dg")
+script = ExtResource("13_bpykm")
 
 [node name="Player" type="CharacterBody3D" parent="." unique_id=60752118]
 transform = Transform3D(0.9994502, 0, -0.03315518, 0, 1, 0, 0.03315518, 0, 0.9994502, 2030, 504, 2070)
-script = ExtResource("3_75cqa")
+script = ExtResource("14_artj2")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Player" unique_id=572356236]
 shape = SubResource("CapsuleShape3D_0yhda")
@@ -333,7 +314,7 @@ mesh = SubResource("CapsuleMesh_5h11f")
 
 [node name="SpringArm3D" type="SpringArm3D" parent="Player" unique_id=1894614479]
 spring_length = 5.0
-script = ExtResource("15_a8tqb")
+script = ExtResource("15_ixr8r")
 
 [node name="Camera3D" type="Camera3D" parent="Player/SpringArm3D" unique_id=2042230522]
 transform = Transform3D(1, -9.313226e-10, -7.450581e-09, -9.313226e-10, 1, -2.9802322e-08, 7.450581e-09, 0, 1, 0, 0, 0)
@@ -341,7 +322,7 @@ transform = Transform3D(1, -9.313226e-10, -7.450581e-09, -9.313226e-10, 1, -2.98
 [node name="Label" type="Label" parent="." unique_id=1325972817]
 offset_right = 40.0
 offset_bottom = 23.0
-script = ExtResource("12_g6rvl")
+script = ExtResource("16_dgoto")
 
 [node name="Node3D2" type="Node3D" parent="." unique_id=622001931]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 0)
