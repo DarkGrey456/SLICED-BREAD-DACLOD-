@@ -96,6 +96,7 @@ float get_splat_color(vec4 color){
 	return color.a;
 }
 
+varying vec3 distance_lod;// = 1.0;
 void vertex() {
 	
 	world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
@@ -119,20 +120,24 @@ void vertex() {
 	TANGENT = normalize((cross(NORMAL, BINORMAL)));
 	float vy = VERTEX.y;
 	
-	
-	if( COLOR.r == 1.0 && COLOR.g == 0.0 && COLOR.b == 0.0){
-		if (VERTEX.x < (0.0 + 0.25)  ){
+	float cam_to_vert = length(world_pos - CAMERA_POSITION_WORLD);
+	float cam_to_node = length( NODE_POSITION_WORLD - CAMERA_POSITION_WORLD);
+//
+	if( COLOR.r == 1.0 && 
+		COLOR.g == 0.0 && COLOR.b == 0.0){
+		if (VERTEX.x <= (-64.0 + 0.5)  ){
 			VERTEX.y += (H2 + H3)/2.0; ;
 		}
-		if (VERTEX.x > 128.0-0.25){
+		if (VERTEX.x >= 64.0-0.5){
 			VERTEX.y =(H2 + H3)/2.0;
 		}
-		if (VERTEX.z < (0.0 + 0.25)  ){
+		if (VERTEX.z <= (-64.0 + 0.5)  ){
 			VERTEX.y = (H0 + H1)/2.0;
 		}
-		if (VERTEX.z > 128.0-0.25){
+		if (VERTEX.z >= 64.0-0.5){
 			VERTEX.y = (H0 + H1)/2.0;
-		}		
+		}	
+	//	VERTEX.y +=  HEIGHT_SCALE*texture(texture_height, vec2(world_pos.x/4096.0,world_pos.z/4096.0)).r;	
 	}
 	else{
 		VERTEX.y +=  HEIGHT_SCALE*texture(texture_height, vec2(world_pos.x/4096.0,world_pos.z/4096.0)).r;
@@ -147,16 +152,30 @@ void vertex() {
 	float splat_color = get_splat_color(splat_map);
 	float hval = (splat_color* h1 + (1.0-splat_color)* h3);
 
-	float cam_to_vert = length(VERTEX - CAMERA_POSITION_WORLD);
-	float cam_to_node = length( NODE_POSITION_WORLD.xz - CAMERA_POSITION_WORLD.xz);
+
+	//if (cam_to_node  < 256.0 && cam_to_node > 128.0-8.0){
+		//distance_lod = vec3(1.0,0.0,0.0);
+	//}
+	//else if (cam_to_node  < 512.0 && cam_to_node > 256.0) {
+		//distance_lod = vec3(0.0,1.0,0.0);
+	//}	
+	//else if (cam_to_node < 1024.0 && cam_to_node > 1024.0 - 128.0){
+		//distance_lod = vec3(0.0,0.0,1.0);
+	//}	
+	//else distance_lod = vec3(0.0,0.0,0.0);
 
 	// if the vertex is in the snap range
 	// and if the vertex is red
-	if( ((cam_to_node < 256.0) ||
-		 ((cam_to_node > 512.0 - 128.0) && 
+	if( ((((cam_to_node < 128.0) && (cam_to_vert > 120.0))  ||
+		 ((cam_to_node >= 512.0 - 128.0) && 
 		  (cam_to_node < 512.0)) ||
-		 ((cam_to_node > 1024.0 - 128.0) && 
-		  (cam_to_node < 1024.0))) && 
+		 ((cam_to_node >= 1024.0 - 128.0) && 
+		  (cam_to_node < 1024.0))) && (cam_to_vert > cam_to_node) )&&
+		//( ((cam_to_node < 256.0) && (cam_to_node > 128.0))  ||
+		 //((cam_to_node > 512.0 - 128.0) && 
+		  //(cam_to_node < 512.0)) ||
+		 //((cam_to_node > 1024.0 - 128.0) && 
+		  //(cam_to_node < 1024.0))) && 		
 		COLOR.r == 1.0 && 
 		COLOR.g == 0.0 && 
 		COLOR.b == 0.0){
@@ -164,7 +183,7 @@ void vertex() {
 		float splat_col = 0.0;
 		
 		// SNAP the red vertices to the LOD below
-		if (VERTEX.x < (0.0 + 0.25)  ){
+		if (VERTEX.x < (-64.0 + 0.5)  ){
 			vec3 v3 = vec3(VERTEX.x, H2, VERTEX.z - 1.0);
 			vec3 v4 = vec3(VERTEX.x, H3, VERTEX.z + 1.0);
 			
@@ -190,7 +209,7 @@ void vertex() {
 			vec3 vD = v3 - VERTEX ;
 			VERTEX +=  vD + vA + vC  *len*0.5 ;			
 		}
-		if (VERTEX.x > 128.0-0.25){
+		if (VERTEX.x > 64.0-0.5){
 			vec3 v3 = vec3(VERTEX.x, H2, VERTEX.z - 1.0);
 			vec3 v4 = vec3(VERTEX.x, H3, VERTEX.z + 1.0);
 			
@@ -217,7 +236,7 @@ void vertex() {
 			vec3 vD = v3 - VERTEX ;
 			VERTEX +=  vD + vA + vC  *len*0.5;					
 		}
-		if (VERTEX.z < (0.0 + 0.25)  ){
+		if (VERTEX.z < (-64.0 + 0.5)  ){
 			vec3 v1 = vec3(VERTEX.x - 1.0, H0, VERTEX.z);
 			vec3 v2 = vec3(VERTEX.x + 1.0, H1, VERTEX.z);
 		
@@ -235,15 +254,15 @@ void vertex() {
 			
 			float hval_snap2 = (S1* h12 + (1.0-S1)* h32);
 			vec3 vB =  5.0 * hval_snap2 * NORMAL;	
+			
 			vec3 vC = (vB - vA);
-
 			float len = length(vC);
 			vC = normalize(vC);
 
 			vec3 vD = v1 - VERTEX ;
 			VERTEX +=  vD + vA + vC  *len*0.5;									
 		}
-		if (VERTEX.z > 128.0-0.25){
+		if (VERTEX.z > 64.0-0.5){
 			vec3 v1 = vec3(VERTEX.x - 1.0, H0, VERTEX.z);
 			vec3 v2 = vec3(VERTEX.x + 1.0, H1, VERTEX.z);			
 			
@@ -283,6 +302,7 @@ void vertex() {
 	COLOR.r = splat_map.r;
 	COLOR.g = splat_map.g;
 	COLOR.b = splat_map.b;
+	
 }
 
 // Change of basis https://www.youtube.com/watch?v=P2LTAUO1TdA
@@ -314,5 +334,5 @@ void fragment() {
 
 	ROUGHNESS= 0.65*(n1.a * splat_color + n3.a * (1.0-splat_color)) ;
 	NORMAL_MAP = 0.5*((n1).rgb * splat_color  + (n3).rgb * (1.0-splat_color ));
-	ALBEDO = 0.5*(alb1.rgb * splat_color  + alb3.rgb *(1.0-splat_color ));
+	ALBEDO = 0.5*(alb1.rgb * splat_color  + alb3.rgb *(1.0-splat_color )) + (distance_lod)*0.1;
 }

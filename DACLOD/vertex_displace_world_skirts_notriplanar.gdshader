@@ -143,7 +143,8 @@ void vertex() {
 	vy = VERTEX.y;
 	//if (vy > -0.5)
 	NORMAL = -normalize(vec3(2.0*(H1 - H0), -4.0, 2.0*(H3-H2) ));//vec3(H0 - H1, 0.8, H2-H3));
-	
+	BINORMAL = normalize(cross(TANGENT, NORMAL));
+	TANGENT = normalize((cross(NORMAL, BINORMAL)));
 	
 	
 	
@@ -250,7 +251,7 @@ void fragment() {
 	}
 	
 	ALBEDO = 0.5*(alb1.rgb * splat_color  + alb3.rgb *(1.0-splat_color ));
-
+	SPECULAR = 0.25;
 	/*}*/
 
 }
