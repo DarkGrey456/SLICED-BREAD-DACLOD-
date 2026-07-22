@@ -740,14 +740,14 @@ var tracked_x =0
 var tracked_z =0
 var tracked_grid_nodes :Array[Vector2i]= []
 var scale_factor = 0.9922
-var old_world_coords = Vector3( floor( (2048.0 +64.0)/ 128.0) , 0.0, floor( (2048.0 +64.0 )/ 128.0 ) )
+var old_world_coords = Vector3( floor( (2048.0 +64.0)/ 4.0) , 0.0, floor( (2048.0 +64.0 )/ 4.0 ) )
 
 
 func _process(delta: float) -> void:
 
-	var curr_world_coords_grid32 = Vector3( floor( (player.global_position.x+64.0) / 128.0) , 
+	var curr_world_coords_grid32 = Vector3( floor( (player.global_position.x+64.0) / 4.0) , 
 											0.0, 
-											floor( (player.global_position.z+64.0) / 128.0)  )
+											floor( (player.global_position.z+64.0) / 4.0)  )
 	if (( int(curr_world_coords_grid32.x) != int(old_world_coords.x) ) or
 		( int(curr_world_coords_grid32.z) != int(old_world_coords.z) ))  :	
 		old_world_coords = curr_world_coords_grid32
