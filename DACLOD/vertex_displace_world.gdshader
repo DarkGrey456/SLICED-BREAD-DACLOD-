@@ -114,27 +114,28 @@ void vertex() {
 	// 0 HB 2
 	
 	NORMAL = -normalize(vec3(2.0*(H1 - H0), -4.0, 2.0*(H3-H2) ));//vec3(H0 - H1, 0.8, H2-H3));
-	
+	//BINORMAL = normalize(cross(TANGENT, NORMAL));
+	//TANGENT = normalize((cross(NORMAL, BINORMAL)));
 	float vy = VERTEX.y;
 	
 	
-	if( COLOR.r == 1.0 && COLOR.g == 0.0 && COLOR.b == 0.0){
-		if (VERTEX.x < (0.0 + 0.25)  ){
-			VERTEX.y += (H2 + H3)/2.0; ;//  mix( H2, H3, 0.5) * HEIGHT_SCALE;
-		}
-		if (VERTEX.x > 128.0-0.25){
-			VERTEX.y =(H2 + H3)/2.0;//mix( H2, H3, 0.5) * HEIGHT_SCALE;
-		}
-		if (VERTEX.z < (0.0 + 0.25)  ){
-			VERTEX.y = (H0 + H1)/2.0;//mix( H0, H1, 0.5) * HEIGHT_SCALE;
-		}
-		if (VERTEX.z > 128.0-0.25){
-			VERTEX.y = (H0 + H1)/2.0;//mix( H0, H1, 0.5) * HEIGHT_SCALE;
-		}		
-	}
-	else{
+	//if( COLOR.r == 1.0 && COLOR.g == 0.0 && COLOR.b == 0.0){
+		//if (VERTEX.x < (0.0 + 0.25)  ){
+			//VERTEX.y += (H2 + H3)/2.0; ;//  mix( H2, H3, 0.5) * HEIGHT_SCALE;
+		//}
+		//if (VERTEX.x > 128.0-0.25){
+			//VERTEX.y =(H2 + H3)/2.0;//mix( H2, H3, 0.5) * HEIGHT_SCALE;
+		//}
+		//if (VERTEX.z < (0.0 + 0.25)  ){
+			//VERTEX.y = (H0 + H1)/2.0;//mix( H0, H1, 0.5) * HEIGHT_SCALE;
+		//}
+		//if (VERTEX.z > 128.0-0.25){
+			//VERTEX.y = (H0 + H1)/2.0;//mix( H0, H1, 0.5) * HEIGHT_SCALE;
+		//}		
+	//}
+	//else{
 		VERTEX.y +=  HEIGHT_SCALE*texture(texture_height, vec2(world_pos.x/4096.0,world_pos.z/4096.0)).r;
-	}
+	//}
 	float h1 =texture(alb_h_1, UV*uv_scale.x).a; 
 	//float h2 =texture(alb_h_2, UV*uv_scale.y).a; 
 	float h3 =texture(alb_h_3, UV*uv_scale.z).a; 
@@ -146,7 +147,7 @@ void vertex() {
 	float hval = (splat_color* h1 + (1.0-splat_color)* h3);
 
 	float cam_to_vert = length(VERTEX - CAMERA_POSITION_WORLD);
-	float cam_to_node = length(NODE_POSITION_WORLD - CAMERA_POSITION_WORLD);
+	float cam_to_node = length( NODE_POSITION_WORLD.xz - CAMERA_POSITION_WORLD.xz);
 
 	if( ((cam_to_node < 256.0))
 		&& COLOR.r == 1.0 && COLOR.g == 0.0 && COLOR.b == 0.0){
@@ -166,16 +167,18 @@ void vertex() {
 	//float h2 =texture(alb_h_2, UV*uv_scale.y).a; 
 			float h31 =texture(alb_h_3, vec2( world_pos.x, world_pos.z-1.0)*uv_scale.z/128.0).a; 	
 			float h32 =texture(alb_h_3, vec2( world_pos.x, world_pos.z+1.0)*uv_scale.z/128.0).a; 				
+			
 			float hval_snap1 = (S2* h11 + (1.0-S2)* h31);
 			vec3 vA =  5.0 * hval_snap1 * NORMAL;// - 2.5 * NORMAL;		
 			float hval_snap2 = (S3* h12 + (1.0-S3)* h32);
 			vec3 vB =  5.0 * hval_snap2 * NORMAL;// - 2.5 * NORMAL;		
 			vec3 vC = (vB - vA);
-
+			
 			float len = length(vC);
 			vC = normalize(vC);
 			//VERTEX += vA + vC  *0.5;
-			VERTEX =  v3 + vA + vC  *len*0.5;			
+			vec3 vD = v3 - VERTEX ;
+			VERTEX +=  vD + vA + vC  *len*0.5;			
 		}
 		if (VERTEX.x > 128.0-0.25){
 			vec3 v3 = vec3(VERTEX.x, H2, VERTEX.z - 1.0);
@@ -197,7 +200,8 @@ void vertex() {
 			float len = length(vC);
 			vC = normalize(vC);
 			//VERTEX += vA + vC  *0.5;
-			VERTEX =  v3+vA + vC  *len*0.5;			
+			vec3 vD = v3 - VERTEX ;
+			VERTEX +=  vD + vA + vC  *len*0.5;					
 		}
 		if (VERTEX.z < (0.0 + 0.25)  ){
 			vec3 v1 = vec3(VERTEX.x - 1.0, H0, VERTEX.z);
@@ -220,7 +224,8 @@ void vertex() {
 			float len = length(vC);
 			vC = normalize(vC);
 			//VERTEX += vA + vC  *0.5;
-			VERTEX =  v1+vA + vC  *len*0.5;							
+			vec3 vD = v1 - VERTEX ;
+			VERTEX +=  vD + vA + vC  *len*0.5;									
 		}
 		if (VERTEX.z > 128.0-0.25){
 			vec3 v1 = vec3(VERTEX.x - 1.0, H0, VERTEX.z);
@@ -240,7 +245,8 @@ void vertex() {
 			float len = length(vC);
 			vC = normalize(vC);
 			//VERTEX += vA + vC  *0.5;
-			VERTEX =  v1+vA + vC  *len*0.5;
+			vec3 vD = v1 - VERTEX ;
+			VERTEX +=  vD + vA + vC  *len*0.5;			
 			// VERTEX = 					
 		}				
 			

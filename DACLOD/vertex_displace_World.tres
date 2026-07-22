@@ -1,6 +1,6 @@
 [gd_resource type="ShaderMaterial" format=3 uid="uid://cs4hqr707kbit"]
 
-[ext_resource type="Shader" uid="uid://joklb7xh0vrc" path="res://vertex_displace_world_skirts_notriplanar.gdshader" id="1_i7cga"]
+[ext_resource type="Shader" uid="uid://ceex5yhnq2bto" path="res://vertex_displace_world.gdshader" id="1_i7cga"]
 [ext_resource type="Texture2D" uid="uid://duv3r3al1rd2f" path="res://assets/textures/prototype_slot1_albedo_bump.png" id="2_4hw7e"]
 [ext_resource type="Texture2D" uid="uid://d0wneqs640mrc" path="res://assets/textures/slot0_albedo_bump.png" id="4_oaimc"]
 [ext_resource type="Texture2D" uid="uid://bv12oixipstqf" path="res://assets/textures/prototype_slot1_normal_roughness.png" id="6_7he84"]
