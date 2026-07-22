@@ -7,7 +7,7 @@ call it DACLOD, Data Aligned Chunked LOD. There is also a wandering GPU clipmap 
 ## Description
 This is a very fast terrain viewer . Current version uses Terrain chunk "skirts" or hems that extrude vertically downwards by about 2 units at the boundary of the chunk. These are then shaded differently as a special condition in the vertex and fragment shaders to fake the normals and compute the texture coordinates to blend them with the ground. The normal vector contribution is also darkened slightly.
 
-NOTE: DO NOT USE THE TRIPLANAR SHADER OR vertex_displace_world.gdshader - they are broken.
+NOTE: DO NOT USE THE TRIPLANAR SHADER.
 
 the working shader is vertex_displace_world_skirts_notriplanar.gdshader
 and that should be installed in the gridtesst.tscn scene file.
