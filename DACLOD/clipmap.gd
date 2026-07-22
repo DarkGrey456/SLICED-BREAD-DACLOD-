@@ -680,7 +680,7 @@ func setup_shader()->void:
 func _ready() -> void:
 
 	setup_grid(grid_size)
-	var center := Vector3( 2048.0 , 0.0, 2048.0 )
+	var center := Vector3( 2048.0 +64.0, 0.0, 2048.0+64.0 )
 	for i in grid_size:
 		for j in grid_size:
 			# duplicate the tile meshes in a grid pattern
@@ -712,7 +712,7 @@ func _ready() -> void:
 				add_child(dup1)		
 				dup1.global_position = tile_pos 
 				grid[ i ][ j ].storage[0].node = dup1
-			elif (lengthToCenter < 256.0 + 16.0) :
+			elif (lengthToCenter < 256.0) :
 				var dup0 :MeshInstance3D= tiles_256.get_lod(0).duplicate()
 				add_child(dup0)									
 				dup0.global_position = tile_pos 
@@ -740,18 +740,18 @@ var tracked_x =0
 var tracked_z =0
 var tracked_grid_nodes :Array[Vector2i]= []
 var scale_factor = 0.9922
-var old_world_coords = Vector3( floor( (2048.0 +64.0)/ 4.0) , 0.0, floor( (2048.0 +64.0 )/ 4.0 ) )
+var old_world_coords = Vector3( floor( (2048.0 +64.0)/ 128.0) , 0.0, floor( (2048.0 +64.0 )/ 128.0 ) )
 
 
 func _process(delta: float) -> void:
 
-	var curr_world_coords_grid32 = Vector3( floor( player.global_position.x / 4.0) , 
+	var curr_world_coords_grid32 = Vector3( floor( (player.global_position.x+64.0) / 128.0) , 
 											0.0, 
-											floor( player.global_position.z / 4.0)  )
+											floor( (player.global_position.z+64.0) / 128.0)  )
 	if (( int(curr_world_coords_grid32.x) != int(old_world_coords.x) ) or
 		( int(curr_world_coords_grid32.z) != int(old_world_coords.z) ))  :	
 		old_world_coords = curr_world_coords_grid32
-		global_position = Vector3(floor( player.global_position.x ) - 2048.0 - 64.0 + 0.5 , 0.0, floor( player.global_position.z ) - 2048.0 - 64.0 + 0.5)
+		global_position = Vector3(floor( player.global_position.x ) - 2048.0 + 64.0 + 0.5 , 0.0, floor( player.global_position.z ) - 2048.0 + 64.0 + 0.5)
 	
 		
 	
