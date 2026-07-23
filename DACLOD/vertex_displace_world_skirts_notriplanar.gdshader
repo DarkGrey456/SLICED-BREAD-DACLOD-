@@ -153,7 +153,7 @@ void vertex() {
 		
 	//vec3 view_dir = normalize(normalize(-VERTEX + EYE_OFFSET) * mat3(TANGENT, -BINORMAL , NORMAL));
 	float splat_color = get_splat_color(splat_map);
-	float hval = splat_function(splat_color, h1,h3);// + (1.0-splat_color)* h3);
+	float hval = splat_function(splat_color, h1, h3);// + (1.0-splat_color)* h3);
 
 
 
@@ -205,14 +205,6 @@ vec3 apply_normal_basis(vec3 n1, vec3 n2)
 void fragment() {
 	vec2 base_uv = UV;
 	
-	//bool un_shaded = false;
-	
-	/*if( un_shaded ){
-		vec4 splat_tex = texture(texture_albedo, world_pos.xz/4096.0);
-		ALBEDO = splat_tex.rgb;
-	}
-	else {*/
-
 	//vec4 alb1 =texture(alb_h_1, UV*uv_scale.x); 
 	vec4 alb1 =texture(alb_h_1, UV*uv_scale.x); 
 	//	vec4 alb2 =texture(alb_h_2, UV*uv_scale.y); 
@@ -225,23 +217,25 @@ void fragment() {
 	float splat_color = get_splat_color(COLOR);
 	//float dp = dot(NORMAL, vec3(0.0,0.0,1.0));
 	
-	ROUGHNESS= 0.65*(n1.a * splat_color + n3.a * (1.0-splat_color)) ;
+	vec4 norm_rough =splat_function(splat_color, n1, n3); 
+	ROUGHNESS= 0.65*norm_rough.a;
 	//mat3 tbn = (mat3(TANGENT , -BINORMAL , NORMAL));
 //	n1.rgb =  apply_normal_basis(n1.rgb, NORMAL);
 //	n3.rgb =  apply_normal_basis(n3.rgb, NORMAL);
 
 	//if( vy > -1.0)
-	NORMAL_MAP =0.5*((n1).rgb * splat_color  + (n3).rgb * (1.0-splat_color ));
+	NORMAL_MAP =0.5*norm_rough.rgb;
 	
 	// attempt to darken the area near the split slightly to hide the skirt	
 	// THIS SEEMS TO WORK
 	// HAVE NOT NOTICED SPLITS FROM ANY ANGLE WITH THIS ADDED IN
 	if ( vy < 0.0) {
-		NORMAL_MAP =0.4*((n1).rgb * splat_color  + (n3).rgb * (1.0-splat_color ));
+		NORMAL_MAP =0.4*norm_rough.rgb;
+		
 	}
 	
-	ALBEDO = 0.5*(alb1.rgb * splat_color  + alb3.rgb *(1.0-splat_color ));
+	ALBEDO = 0.5*splat_function(splat_color, alb1, alb3).rgb;
+
 	SPECULAR = 0.25;
-	/*}*/
 
 }
