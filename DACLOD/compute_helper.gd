@@ -10,6 +10,17 @@ var compute: EasyCompute = EasyCompute.new()
 
 
 func generate_AABB_and_occluders(height_map:Image)->PackedVector4Array:
+
+	if height_map.get_width() == 8192:	
+		return generate_AABB_and_occluders_8k(height_map)
+	if height_map.get_width() == 4096:	
+		return generate_AABB_and_occluders_4k(height_map)	
+	if height_map.get_width() == 2048:	
+		return generate_AABB_and_occluders_2k(height_map)
+		
+	return PackedVector4Array()
+	
+func generate_AABB_and_occluders_1k(height_map:Image)->PackedVector4Array:	
 	compute.load_shader("fill", "res://assets/compute/fill42.glsl")
 		
 	var image = height_map
@@ -74,6 +85,139 @@ func generate_AABB_and_occluders(height_map:Image)->PackedVector4Array:
 	#var output_image = Image.create_from_data(64, 64, false, Image.FORMAT_RGBAF, final_image_data)
 	#var texture2 = ImageTexture.create_from_image(output_image)
 
+	
+	
+func generate_AABB_and_occluders_2k(height_map:Image)->PackedVector4Array:	
+	compute.load_shader("fill", "res://assets/compute/fill42.glsl")
+		
+	var image = height_map
+	if image.is_compressed():
+		image.decompress()	
+	image.convert(Image.FORMAT_RF)
+	var texture = ImageTexture.create_from_image(image)
+	
+	var source_size = 2048
+	var output_size1 = source_size / 8
+	# FIRST PASS, Find min and max height values
+	compute.register_texture("height_image", 0, source_size, source_size, image.get_data(), RenderingDevice.DATA_FORMAT_R32_SFLOAT)
+	compute.register_texture("data_output_image", 1, output_size1, output_size1, [], RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT)
+	compute.execute("fill", output_size1, output_size1)
+	compute.sync()
+
+	var image_data = compute.fetch_texture("data_output_image")
+
+	compute.unload_shader("fill")
+	
+	var output_size2 = output_size1 / 8
+	# SECOND PASS, Find min and max height values
+	compute.load_shader("fill_min_max", "res://assets/compute/fill_min_max4.glsl")
+	compute.register_texture("height_image2", 1, output_size1, output_size1, image_data, RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT)
+	compute.register_texture("data_output_image2", 2, output_size2, output_size2, [], RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT)
+	compute.execute("fill_min_max", 64,64)
+	compute.sync()
+	
+	var image_data2 = compute.fetch_texture("data_output_image2")	
+
+	var output_size3 = output_size2 / 2
+	compute.load_shader("find_min_max_div2", "res://assets/compute/find_min_max_divide_2.glsl")
+	compute.register_texture("height_image3", 2, output_size2, output_size2, image_data2, RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT)
+	compute.register_texture("data_output_image3", 3, output_size3, output_size3, [], RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT)
+	compute.execute("fill_min_max", output_size3,output_size3)
+	compute.sync()
+
+	var final_image_data = compute.fetch_texture("data_output_image3")
+	var float_data = final_image_data.to_vector4_array()
+	
+	compute.unload_shader("find_min_max_div2")
+	
+	return float_data
+	
+		
+func generate_AABB_and_occluders_4k(height_map:Image)->PackedVector4Array:	
+	compute.load_shader("fill", "res://assets/compute/fill42.glsl")
+		
+	var image = height_map
+	if image.is_compressed():
+		image.decompress()	
+	image.convert(Image.FORMAT_RF)
+	var texture = ImageTexture.create_from_image(image)
+	var source_size = 4096
+	var output_size1 = source_size / 8
+	# FIRST PASS, Find min and max height values
+	compute.register_texture("height_image", 0, source_size, source_size, image.get_data(), RenderingDevice.DATA_FORMAT_R32_SFLOAT)
+	compute.register_texture("data_output_image", 1, output_size1, output_size1,[], RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT)
+	compute.execute("fill", output_size1, output_size1)
+	compute.sync()
+
+	var image_data = compute.fetch_texture("data_output_image")
+
+	compute.unload_shader("fill")
+	
+	var output_size2 = output_size1 / 8
+	# SECOND PASS, Find min and max height values
+	compute.load_shader("fill_min_max", "res://assets/compute/fill_min_max4.glsl")
+	compute.register_texture("height_image2", 1, output_size1, output_size1, image_data, RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT)
+	compute.register_texture("data_output_image2", 2, output_size2, output_size2, [], RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT)
+	compute.execute("fill_min_max", output_size2,output_size2)
+	compute.sync()
+	
+	
+	var final_image_data = compute.fetch_texture("data_output_image2")
+	var float_data = final_image_data.to_vector4_array()
+	
+	compute.unload_shader("fill_min_max")
+	
+	return float_data
+	
+	
+func generate_AABB_and_occluders_8k(height_map:Image)->PackedVector4Array:	
+	compute.load_shader("fill", "res://assets/compute/fill42.glsl")
+		
+	var image = height_map
+	if image.is_compressed():
+		image.decompress()	
+	image.convert(Image.FORMAT_RF)
+	var texture = ImageTexture.create_from_image(image)
+	var source_size = 8182
+	var output_size1 = source_size / 8
+	# FIRST PASS, Find min and max height values
+	compute.register_texture("height_image", 0, source_size, source_size, image.get_data(), RenderingDevice.DATA_FORMAT_R32_SFLOAT)
+	compute.register_texture("data_output_image", 1, output_size1, output_size1,[], RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT)
+	compute.execute("fill", output_size1, output_size1)
+	compute.sync()
+
+	var image_data = compute.fetch_texture("data_output_image")
+
+	compute.unload_shader("fill")
+	
+	var output_size2 = output_size1 / 2
+	# SECOND PASS, Find min and max height values
+	compute.load_shader("fill_min_max", "res://assets/compute/fill_min_max4.glsl")
+	compute.register_texture("height_image2", 1, output_size1, output_size1, image_data, RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT)
+	compute.register_texture("data_output_image2", 2, output_size2, output_size2, [], RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT)
+	compute.execute("fill_min_max", output_size2,output_size2)
+	compute.sync()
+	
+	
+	var image_data2 = compute.fetch_texture("data_output_image2")
+
+	var output_size3 = output_size2 / 2
+	compute.load_shader("find_min_max_div2", "res://assets/compute/find_min_max_divide_2.glsl")
+	compute.register_texture("height_image3", 2, output_size2, output_size2, image_data2, RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT)
+	compute.register_texture("data_output_image3", 3, output_size3, output_size3, [], RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT)
+	compute.execute("fill_min_max", output_size3,output_size3)
+	compute.sync()
+
+	var final_image_data = compute.fetch_texture("data_output_image3")	
+	
+	
+	
+	var float_data = final_image_data.to_vector4_array()
+	
+	compute.unload_shader("fill_min_max")
+	
+	return float_data
+	
 
 #=======================================================================================================
 
@@ -87,6 +231,8 @@ func generate_physics_shape(height_map:Image,
 							splat_col:float,
 							HEIGHT_SCALE:float,
 							mesh_verts:PackedVector4Array)->PackedVector4Array:
+								
+	
 								
 	compute.load_shader("compute_height", "res://assets/compute/compute_physics_model2.glsl")
 		

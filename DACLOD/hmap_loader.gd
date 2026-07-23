@@ -53,7 +53,12 @@ var scale_xz = 1.0
 var make_collider = create_occluders
 
 @onready var tiles: Node3D = $tiles_256
+# conveniently we can declare useless variables half way down the page	
+var data_mesh_grid:Dictionary
+var mesh_faces :PackedVector4Array
+var mesh_verts:PackedVector4Array
 
+@export var player:CharacterBody3D
 
 var x: float = 0
 var z: float = 0
@@ -101,27 +106,13 @@ func setup_grid(N:int)->void:
 		for j in range(N):
 			grid[i].append(grid_elem.new())
 			grid[i][j].storage.append(Elem.new())
-	cell_size = xmax / N
+	
 	
 
 func world_coords_to_grid_coords(px:float,py:float)->Vector2i:
 	return Vector2i( floor((float(px)) / cell_size),floor((float(py)) / cell_size))
 
-# grid utilities ...
-func kill_grid_cell(i:int, j:int) ->void:
-	for k in grid[i][j].storage:
-		grid[i][j].storage.erase(k)
 
-func activate_grid_cell(ii:int, jj:int)->void:
-	for k in grid[ii][jj].storage.size():
-		var scene = load( grid[ii][jj].storage[k].mesh)
-		var p = scene.instantiate()
-		#p.global_position = grid[i][j].storage[k].position
-		p.transform.basis = grid[ii][jj].storage[k].basis
-		p.transform.origin = grid[ii][jj].storage[k].position
-		print(p.transform)
-
-		add_child(p)
 			
 # Applies a function to the 9 surrounding tiles.
 func flatten_grid_pattern_at_point(p:Vector2i, tracked_grid_nodes: Array, b_threaded:bool)->void:
@@ -139,19 +130,12 @@ func flatten_grid_pattern_at_point(p:Vector2i, tracked_grid_nodes: Array, b_thre
 					# activate
 					grid[ px ][ py ].storage[ 0 ].collider_active = true
 
-					# generate
-					if b_threaded:		
-						var rect:Rect2
-						rect.position = Vector2(float(px)*cell_size  , 
-												float(py)*cell_size  )						
-						rect.size = Vector2(cell_size, cell_size)	
-						WorkerThreadPool.add_task(func():thread_create_colliders(rect))
-					else:
-						var rect:Rect2
-						rect.position = Vector2(float(px)*cell_size  , 
-												float(py)*cell_size  )												
-						rect.size = Vector2(cell_size, cell_size)							
-						thread_create_colliders(rect)
+
+					var rect:Rect2
+					rect.position = Vector2(float(px)*cell_size  , 
+											float(py)*cell_size  )												
+					rect.size = Vector2(cell_size, cell_size)							
+					thread_create_colliders(rect)
 
 				
 #=======================================================================================
@@ -160,15 +144,12 @@ func flatten_grid_pattern_at_point(p:Vector2i, tracked_grid_nodes: Array, b_thre
 
 # wrapper for the thread
 func thread_create_colliders(rect:Rect2):
-	thread_generate(rect, compute_shader_collision)		
+	thread_generate(rect, true)		
 				
 
 	
-# conveniently we can declare useless variables half way down the page	
-var data_mesh_grid:Dictionary
-var mesh_faces :PackedVector4Array
-var mesh_verts:PackedVector4Array
 
+@export var channel_for_splat:int
 # this is where we initialize compute shaders, so really the function
 # should be called initialize_compute_helper or something ... 
 func create_occluders()->void:
@@ -181,8 +162,7 @@ func create_occluders()->void:
 
 	# Launch the compute shader kernal to quickly compute the AABB's 	
 	var computed_heights :PackedVector4Array= compute_helper.generate_AABB_and_occluders(hmap)
-	
-	#var grid_coord = world_coords_to_grid_coords(player.global_position.x, player.global_position.z)
+
 	if compute_shader_collision:
 		var verts_output :PackedVector4Array = compute_helper.generate_physics_shape( 
 							hmap, 								# height map
@@ -312,7 +292,6 @@ func create_box_mesh(pos:Vector3, size:Vector3)->MeshInstance3D:
 		
 
 
-@export var player:CharacterBody3D
 
 
 				
@@ -418,95 +397,13 @@ func create_normal_map(height_map:Image, bump_scale:float, path:String)->void:
 		nmap = gpuNormals.get_image()
 		
 
-# This is used by the threaded cpu script collision mesh generation model 
-# unfortunately this function is probably innaccurate
-func sample_image_bilnear_bump(image:Image,x:float, y:float, scale:float, divisor:float, size:float)->float:
-	
-	var u_1 = scale * x / divisor  
-	var v_1 = scale * y / divisor 
-		
-	var u__1 =  (u_1 - int(u_1))
-	var v__1 =    (v_1 - int(v_1))
-	
-	var u1 = size * u__1
-	var v1 = size * v__1
-		
-	var u12 = u1 + 1 
-	if u12 > size-1: u12 = 0
-	var v12 = v1 + 1
-	if v12 > size-1: v12 = 0
-
-	# bilinear filter attempt 
-	var m_uv1 := Vector2i( u1,v1)
-	var m_uv12 := Vector2i( u12,v1)
-	var m_uv13 := Vector2i( u1,v12)
-	var m_uv14 := Vector2i( u12,v12)
-	var disp11 = image.get_pixelv( m_uv1 ).a	
-	var disp12 = image.get_pixelv( m_uv12 ).a
-	var disp13 = image.get_pixelv( m_uv13 ).a
-	var disp14 = image.get_pixelv( m_uv14 ).a
-	var disp1 = lerp ( lerp(disp11,disp12,u__1), lerp(disp13,disp14,u__1), v__1)	
-
-	return disp1
-
-@export var channel_for_splat:int
-
-func get_map_values( x:float, z:float, X:int, Z:int):
-	var normal_pix:Color = nmap.get_pixel(X+int(x), Z+int(z))
-	
-	var H1 = HEIGHT_SCALE*hmap.get_pixel(X + int(x-1), Z + int(z)).r
-	var H2 = HEIGHT_SCALE*hmap.get_pixel(X + int(x+1), Z + int(z)).r
-	var H3 = HEIGHT_SCALE*hmap.get_pixel(X + int(x), Z + int(z-1)).r
-	var H4 = HEIGHT_SCALE*hmap.get_pixel(X + int(x), Z + int(z+1)).r
-	
-	var normal = -Vector3(2.0*(H2 - H1), -4.0, 2.0*(H4-H3) ).normalized();
-	
-	var splat:Color = splat_map.get_pixel( X+int(x), Z+int(z) )
-
-	# MAP 1 of 4
-	var disp1 =sample_image_bilnear_bump(alb1,x,z,UV_SCALE.x,128.0,512)
-
-	# MAP 2 of 4
-	var u2 = 	int(512.0*(x * UV_SCALE.x/ TEXTURE_DIVISOR  - floor(x * UV_SCALE.x/ TEXTURE_DIVISOR  ) ))
-	var v2 = 	int(512.0*(z * UV_SCALE.x/ TEXTURE_DIVISOR  - floor(z * UV_SCALE.x/ TEXTURE_DIVISOR  ) ))
-	var m_uv2:= Vector2i( u2,v2 )
-	var disp2 = alb2.get_pixelv( m_uv2 ).a	
-	
-	# MAP 3 of 4
-	var disp3 =sample_image_bilnear_bump(alb3,x,z,UV_SCALE.z,128.0,512)
-
-	# MAP 4 of 4
-	var u4 = 	int( 512.0 * fposmod( (x * UV_SCALE.w)/ TEXTURE_DIVISOR, 1.0  )) 
-	var v4 = 	int( 512.0 * fposmod( (z * UV_SCALE.w)/ TEXTURE_DIVISOR, 1.0  )) 
-	var m_uv4:= Vector2i( u4,v4 )
-	var disp4 = alb4.get_pixelv( m_uv4 ).a	
-	
-	var splat_pixel = get_splat_color(splat)	
-	
-	# The function is only using MAP 1 and MAP 3
-	var hval:float = (splat_pixel* disp1 +(1.0 -splat_pixel) * disp3)			
-	
-	return {
-		"normal":normal,
-		"height":hval
-	}
-
-func get_splat_color(splat)->float:
-	if channel_for_splat == 0:
-		return splat.r
-	if channel_for_splat == 1:
-		return splat.g
-	if channel_for_splat == 2:
-		return splat.b
-	return splat.a		
-
 #=======================================================================================
 # Thread function
 #=======================================================================================	
 func thread_generate(rect: Rect2, use_compute:bool)->void:
 	# if this is true then the process is not multi threaded
-	if use_compute:
-		var verts_output :PackedVector4Array = compute_helper.generate_physics_shape_per_frame( hmap, 
+
+	var verts_output :PackedVector4Array = compute_helper.generate_physics_shape_per_frame( hmap, 
 							self.splat_map, 
 							self.alb1, 
 							self.alb3, 
@@ -516,34 +413,9 @@ func thread_generate(rect: Rect2, use_compute:bool)->void:
 							HEIGHT_SCALE,
 							mesh_verts)
 						
-		WorkerThreadPool.add_task(func():setup_computed_collision_model(rect,mesh_faces, verts_output))	
+	WorkerThreadPool.add_task(func():setup_computed_collision_model(rect,mesh_faces, verts_output))	
 					
-	else:						
-#
-		var mesh_data = generate_mesh_data(rect)
-
-		var static_body:StaticBody3D = StaticBody3D.new()
-		var collision_shape := CollisionShape3D.new()
-		
-		var polygon_shape := ConcavePolygonShape3D.new()
-		polygon_shape.set_faces(mesh_data)
-
-	#create_physics_shape.call_deferred(mesh_data,
-									   #Vector3( rect.position.x , 
-												#0.0, 
-												#rect.position.y ))
-		collision_shape.shape = polygon_shape
-		static_body.add_child(collision_shape)
-		#
-		add_child.call_deferred(static_body)
-		#
-		#
-		#
-		static_body.connect("tree_entered", Callable(self, 
-			"_on_tree_entered").bind( static_body,
-									Vector3(rect.position.x  , 
-											0.0, 
-											rect.position.y )))
+	
 		
 		
 #=======================================================================================
@@ -577,23 +449,6 @@ func setup_computed_collision_model(rect: Rect2,
 										0.0, 
 										rect.position.y )))		
 												
-
-#=======================================================================================
-# CPU Collision Mesh ( probably redundant )
-#=======================================================================================	
-func generate_mesh_data(rect: Rect2) -> Array:
-
-	var mesh_faces_local :PackedVector3Array=  PackedVector3Array()
-	
-	for v in mesh_faces:
-		v.y = get_altitude(Vector3(rect.position.x+v.x, 0, rect.position.y+v.z))
-		var disp_dict = get_map_values(v.x, v.z, rect.position.x, rect.position.y)#x/2.0,z/2.0
-		var v1 =Vector3(v.x, v.y, v.z)
-		v1 += 5.0 * disp_dict["normal"] * disp_dict["height"]# - 2.5 * disp_dict["normal"]
-		mesh_faces_local.append(v1)
-		
-	return mesh_faces_local	
-
 
 
 #=======================================================================================
@@ -677,7 +532,13 @@ func setup_shader()->void:
 # This really needs to cache stuff computed in the Editor and run that in the game
 func _ready() -> void:
 
+	load_image()
+	
+	xmax = hmap.get_width()
+	grid_size = xmax / cell_size
+
 	setup_grid(grid_size)
+	
 	for i in grid_size:
 		for j in grid_size:
 			# duplicate the tile meshes in a grid pattern
@@ -690,7 +551,7 @@ func _ready() -> void:
 			grid[ i ][ j ].storage[0].node = dup
 				
 				
-	load_image()
+
 					
 	setup_shader()			
 	

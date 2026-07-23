@@ -1,7 +1,9 @@
 [gd_scene format=4 uid="uid://bvah1n3yrngjo"]
 
 [ext_resource type="Script" uid="uid://b608qr6epamkd" path="res://clipmap.gd" id="1_shl62"]
+[ext_resource type="Texture2D" uid="uid://dbow6tpffovn2" path="res://assets/Heightmaps/Terrain004_8k_png/Terrain004_8K.exr" id="2_7u03u"]
 [ext_resource type="Texture2D" uid="uid://dnwbmg41kby1i" path="res://assets/Heightmaps/ISLAND_4k_2/height2.exr" id="2_u2pkg"]
+[ext_resource type="Texture2D" uid="uid://blvkt4wvfpgyo" path="res://assets/Heightmaps/Terrain004_8k_png/Terrain004_8K_Protrusion.png" id="3_4ww41"]
 [ext_resource type="Texture2D" uid="uid://cojaqwy46h6bb" path="res://assets/Heightmaps/ISLAND_4k_2/splat2.png" id="3_7u03u"]
 [ext_resource type="Texture2D" uid="uid://duv3r3al1rd2f" path="res://assets/textures/prototype_slot1_albedo_bump.png" id="4_4ww41"]
 [ext_resource type="Texture2D" uid="uid://dtpmb3n8hopcl" path="res://assets/textures/prototype_slot3_albedo_bump.png" id="5_kxga3"]
@@ -52,11 +54,11 @@ shadow_mesh = SubResource("ArrayMesh_l4vwv")
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_7u03u"]
 render_priority = 0
 shader = ExtResource("11_wgks0")
-shader_parameter/channel_for_splat = 1
-shader_parameter/uv_scale = Vector4(4, 4, 8, 2)
+shader_parameter/channel_for_splat = 0
+shader_parameter/uv_scale = Vector4(4, 4, 4, 4)
 shader_parameter/albedo = Color(0, 0, 0, 1)
-shader_parameter/splat_tex = ExtResource("3_7u03u")
-shader_parameter/texture_height = ExtResource("2_u2pkg")
+shader_parameter/splat_tex = ExtResource("3_4ww41")
+shader_parameter/texture_height = ExtResource("2_7u03u")
 shader_parameter/albedo_texture_size = Vector2i(0, 0)
 shader_parameter/point_size = 0.0
 shader_parameter/roughness = 0.0
@@ -267,6 +269,7 @@ volumetric_fog_density = 0.005
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 128.5, 0, 128.5)
 script = ExtResource("1_shl62")
 compute_shader_collision = true
+height_map_name = "res://assets/Heightmaps/Terrain004_8k_png/Terrain004_8K.exr"
 height_map_texture = ExtResource("2_u2pkg")
 gpuSplat = ExtResource("3_7u03u")
 alb_h_1 = ExtResource("4_4ww41")
@@ -279,7 +282,6 @@ norm_rough_3 = ExtResource("9_fw4od")
 norm_rough_4 = ExtResource("7_fxupk")
 UV_SCALE = Vector4(4, 4, 4, 4)
 player = NodePath("../Player")
-channel_for_splat = 1
 
 [node name="tiles_256" type="Node3D" parent="Node3D" unique_id=306952797]
 script = ExtResource("10_sf61h")
