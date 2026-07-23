@@ -1,6 +1,8 @@
 #[compute]
 #version 450
 
+#include "res://assets/compute/global_inc.gdshaderinc"
+
 layout(local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
 
 // These seem to interfere with the set 0 bindings from the earlier shader if binding = 0,1,2 etc
@@ -47,22 +49,13 @@ void main() {
 
 		vec2 height_UV = vec2( world_pos_x / 4096.0, world_pos_z / 4096.0 );
 
-		vec2 height_UV0 = vec2( (world_pos_x - 1.0) / 4096.0, (world_pos_z      ) / 4096.0 );
-		vec2 height_UV1 = vec2( (world_pos_x + 1.0) / 4096.0, (world_pos_z      ) / 4096.0 );
-		vec2 height_UV2 = vec2( (world_pos_x      ) / 4096.0, (world_pos_z - 1.0) / 4096.0 );
-		vec2 height_UV3 = vec2( (world_pos_x      ) / 4096.0, (world_pos_z + 1.0) / 4096.0 );
 
 		vec2 bump_UV = vec2( world_pos_x /128.0, world_pos_z /128.0 ); 
 	
 	
-		float H0 = HEIGHT_SCALE*texture( height_tex, height_UV0 ).r;
-		float H1 = HEIGHT_SCALE*texture( height_tex, height_UV1 ).r;
-		float H2 = HEIGHT_SCALE*texture( height_tex, height_UV2 ).r;
-		float H3 = HEIGHT_SCALE*texture( height_tex, height_UV3 ).r;
-	
-		vec3 n = -normalize(vec3(2.0*(H1 - H0), -4.0, 2.0*(H3-H2) ));
+		
 
-		vec4 NORMAL = vec4( n.x, n.y, n.z, 0.0 );
+		vec4 NORMAL = compute_normal(height_tex, HEIGHT_SCALE, 4096.0, vec3(world_pos_x, 0.0, world_pos_z));
 
 		VERTEX.y = HEIGHT_SCALE * texture( height_tex, height_UV ).r;
 	
@@ -86,9 +79,9 @@ void main() {
 		splat_color = splat_map.a;
 		}
 
-		float hval = (splat_color* h1 + (1.0-splat_color)* h3);
+		float hval = splat_function (splat_color, h1 , h3);
 		
-		VERTEX +=  5.0 * hval * NORMAL;
+		VERTEX =  displace(VERTEX, 5.0, hval, NORMAL) ;
 		VERTEX.x -= 0.50;
 		VERTEX.z -= 0.50;
 
