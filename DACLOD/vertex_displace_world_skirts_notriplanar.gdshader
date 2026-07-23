@@ -3,6 +3,8 @@
 shader_type spatial;
 render_mode blend_mix, depth_draw_opaque, cull_back, specular_schlick_ggx;
 
+#include "assets/compute/global_inc.gdshaderinc"
+
 uniform int channel_for_splat = 1;
 uniform vec4 uv_scale = vec4(9.0,18.0, 9.0, 2.0);
 uniform vec4 albedo : source_color;
@@ -126,23 +128,11 @@ void vertex() {
 	world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	UV = vec2(world_pos.xz/128.0 );//- floor(world_pos.xz/127.0 )) ;
 
-	float H0 = HEIGHT_SCALE*texture(texture_height, vec2((world_pos.x-1.0)/4096.0,world_pos.z/4096.0)).r;
-	float H1 = HEIGHT_SCALE*texture(texture_height, vec2((world_pos.x+1.0)/4096.0,world_pos.z/4096.0)).r;
-	float H2 = HEIGHT_SCALE*texture(texture_height, vec2((world_pos.x)/4096.0,(world_pos.z-1.0)/4096.0)).r;
-	float H3 = HEIGHT_SCALE*texture(texture_height, vec2((world_pos.x)/4096.0,(world_pos.z+1.0)/4096.0)).r;
-	//vec3 v1 = vec3(world_pos.x - 1.0, H0, world_pos.z);
-	//vec3 v2 = vec3(world_pos.x + 1.0, H1, world_pos.z);
-	//vec3 v3 = vec3(world_pos.x, H2, world_pos.z - 1.0);
-	/*vec3 v4 = vec3(world_pos.x, H3, world_pos.z + 1.0);
-	vec3 VA = vec3( 2.0, H1 - H0, 0.0 );
-	vec3 VB = vec3( 0.0, H3 - H2, 2.0);
-	vec3 VX = cross(VA,VB); */
-	// i j k 
-	// 2 HA 0     = i (2 HA) - j (4) + k (2 HB)
-	// 0 HB 2
+	NORMAL = compute_normal(texture_height,HEIGHT_SCALE,4096.0, world_pos ).xyz;
+
+
 	vy = VERTEX.y;
-	//if (vy > -0.5)
-	NORMAL = -normalize(vec3(2.0*(H1 - H0), -4.0, 2.0*(H3-H2) ));//vec3(H0 - H1, 0.8, H2-H3));
+
 	BINORMAL = normalize(cross(TANGENT, NORMAL));
 	TANGENT = normalize((cross(NORMAL, BINORMAL)));
 	
@@ -163,14 +153,14 @@ void vertex() {
 		
 	//vec3 view_dir = normalize(normalize(-VERTEX + EYE_OFFSET) * mat3(TANGENT, -BINORMAL , NORMAL));
 	float splat_color = get_splat_color(splat_map);
-	float hval = (splat_color* h1 + (1.0-splat_color)* h3);
+	float hval = splat_function(splat_color, h1,h3);// + (1.0-splat_color)* h3);
 
 
 
 	// this function ,must be the same as the function that generates the collisions
 	// the vy check is for the terrain tiles *with* skirts ... not currently used.
 	if (vy > -0.5)
-		VERTEX +=  5.0 * hval * NORMAL;// - 2.5 * NORMAL;			
+		VERTEX =  displace( vec4(VERTEX,1.0), 5.0,  hval, vec4(NORMAL,1.0)).xyz;// - 2.5 * NORMAL;			
 	else
 	{
 		// COMPUTE TEXTURE COORDINATES FOR THIS SKIRTS... THIS HAPPENS

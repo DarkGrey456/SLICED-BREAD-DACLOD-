@@ -259,9 +259,9 @@ func create_occluders()->void:
 					
 					var local_height = max(500.0 - 0.0, 1.0)
 					
-					grid[ g_x ][ g_y ].storage[0].aabb = AABB( Vector3(	0.5, 
+					grid[ g_x ][ g_y ].storage[0].aabb = AABB( Vector3(	-64.0 + 0.5, 
 																	   	0.0, 
-																		0.5),
+																		-64.0 + 0.5),
 															   Vector3( cell_size,
 																		local_height, 
 																		cell_size) )
