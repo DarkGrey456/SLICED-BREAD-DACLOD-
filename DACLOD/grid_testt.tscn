@@ -349,8 +349,8 @@ script = ExtResource("12_g6rvl")
 environment = SubResource("Environment_5h11f")
 camera_attributes = SubResource("CameraAttributesPractical_6qr5l")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment" unique_id=749378629]
-transform = Transform3D(0.38852614, -0.40261623, 0.82882285, -0.7111599, 0.44093782, 0.54756314, -0.5859172, -0.8021683, -0.11500864, 0, 0, 0)
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment" unique_id=1113029233]
+transform = Transform3D(-0.6029388, -0.7830787, -0.15248816, -0.7111599, 0.4409377, 0.5475632, -0.36154732, 0.43859056, -0.8227525, 0, 0, 0)
 shadow_enabled = true
 shadow_bias = 0.397
 shadow_normal_bias = 5.564

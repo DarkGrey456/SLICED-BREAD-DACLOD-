@@ -122,21 +122,22 @@ float get_splat_color(vec4 color){
 }
 
 varying float vy;
-
+varying vec3 terrain_normal;
 void vertex() {
 	
 	world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	UV = vec2(world_pos.xz/128.0 );//- floor(world_pos.xz/127.0 )) ;
 
 	NORMAL = compute_normal(texture_height,HEIGHT_SCALE,4096.0, world_pos ).xyz;
-
-
+	//NORMAL = normalize(NORMAL);
+	//TANGENT = normalize(vec3(NORMAL.x, 1.0-NORMAL.x, 0.0));
+	
 	vy = VERTEX.y;
 
-	BINORMAL = normalize(cross(TANGENT, NORMAL));
-	TANGENT = normalize((cross(NORMAL, BINORMAL)));
+	//BINORMAL = normalize(cross(TANGENT, NORMAL));
+	//TANGENT = normalize(cross(NORMAL, BINORMAL));
 	
-	
+	terrain_normal = NORMAL;	
 	
 
 
@@ -194,7 +195,7 @@ vec3 apply_normal_basis(vec3 n1, vec3 n2)
 	vec3 up = n1;
 	vec3 right = vec3(n1.y, -n1.z, n1.x);
 	vec3 forward = vec3(n1.x, -n1.z, n1.y);
-	vec3 change_of_basis = n2.x*right + n2.y*up + n2.z*forward;
+	vec3 change_of_basis = -n2.x*right + n2.z*up + n2.y*forward;
 	
 	// Prevent n2 rotated from pointing away from n1
 	//change_of_basis.y = max(change_of_basis.y, 0.0);
@@ -216,21 +217,25 @@ void fragment() {
 	//	vec4 n4 =texture(norm_r_4, UV*uv_scale.w); 
 	float splat_color = get_splat_color(COLOR);
 	//float dp = dot(NORMAL, vec3(0.0,0.0,1.0));
-	
-	vec4 norm_rough =splat_function(splat_color, n1, n3); 
-	ROUGHNESS= 0.65*norm_rough.a;
-	//mat3 tbn = (mat3(TANGENT , -BINORMAL , NORMAL));
+//	n1.rgb = normalize(2.0*n1.rgb-1.0);
+//	n3.rgb = normalize(2.0*n3.rgb-1.0);
 //	n1.rgb =  apply_normal_basis(n1.rgb, NORMAL);
 //	n3.rgb =  apply_normal_basis(n3.rgb, NORMAL);
+	vec4 norm_rough =splat_function(splat_color, n1, n3); 
+	//norm_rough.rgb = (2.0*norm_rough.rgb-1.0);//apply_normal_basis(normalize(2.0*norm_rough.rgb-1.0),NORMAL);
 
+	ROUGHNESS= 0.65*norm_rough.a;
+	//mat3 tbn = (mat3(TANGENT , -BINORMAL , NORMAL));
+
+	//norm_rough.r = -norm_rough.r;
 	//if( vy > -1.0)
-	NORMAL_MAP =0.5*norm_rough.rgb;
+	NORMAL_MAP =0.5*norm_rough.rgb;//apply_normal_basis(norm_rough.rgb,terrain_normal);
 	
 	// attempt to darken the area near the split slightly to hide the skirt	
 	// THIS SEEMS TO WORK
 	// HAVE NOT NOTICED SPLITS FROM ANY ANGLE WITH THIS ADDED IN
 	if ( vy < 0.0) {
-		NORMAL_MAP =0.4*norm_rough.rgb;
+		NORMAL_MAP =-0.4*norm_rough.rgb;
 		
 	}
 	
